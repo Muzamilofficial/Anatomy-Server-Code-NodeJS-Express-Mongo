@@ -207,26 +207,16 @@ app.get("/login-success", (req, res) => {
       <body>
         <div class="container">
           <img src="/assets/images/logo.png" alt="App Logo" class="logo" />
-          <h1>Login Successful!</h1>
-          <p>Welcome, <strong>${email}</strong>. Your login was successful.</p>
-          <p>You can now close this window.</p>
+          <h1>Check Your Google Mail!</h1>
+          <p>An email has been sent to your Google account <strong>${email}</strong> with your login credentials.</p>
+          <p>Please check your inbox to continue. If you haven't received the email, kindly check your spam folder or try again later.</p>
+          
           <div class="footer">&copy; 2024 Anatomy. All rights reserved.</div>
         </div>
-        <script>
-          // Notify the app of login success
-          const redirectUri = "${req.query.redirect_uri || 'yourapp://callback'}";
-          if (window.opener) {
-            // Notify the parent window and close
-            window.opener.postMessage({ success: true, email: "${email}" }, "*");
-            window.close();
-          } else if (redirectUri) {
-            // Redirect if no parent window (fallback for non-popup scenarios)
-            window.location.href = redirectUri;
-          }
-        </script>
       </body>
     </html>
-  `);
+`);
+
 });
 
 
@@ -234,16 +224,11 @@ app.get("/login-success", (req, res) => {
 
 
 app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-  const { token } = req.user;
+  const { token, profile } = req.user;
 
-  res.send(`
-      <script>
-          window.ReactNativeWebView.postMessage('login-success:${token}');
-          window.close();
-      </script>
-  `);
+  // After the login, you can redirect to a success page
+  res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}`);
 });
-
 
 // SMTP Configuration
 const transporter = nodemailer.createTransport({
