@@ -78,10 +78,10 @@ passport.use(
                   <li><strong>Password:</strong> ${generatedPassword}</li>
                 </ul>
                 <p style="color: #555; font-size: 16px; line-height: 1.5;">
-                  You can access your personalized dashboard using the link below:
+                  You can access your Anatomy Home dashboard using the link below:
                 </p>
                 <div style="text-align: center; margin-top: 20px;">
-                  <a href="${personalizedURL}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Access Your Dashboard</a>
+                  <a href="${personalizedURL}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Click Here To Proceed Anatomy Home Screen</a>
                 </div>
                 <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
                   <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
