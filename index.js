@@ -234,11 +234,16 @@ app.get("/login-success", (req, res) => {
 
 
 app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-  const { token, profile } = req.user;
+  const { token } = req.user;
 
-  // After the login, you can redirect to a success page
-  res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}`);
+  res.send(`
+      <script>
+          window.ReactNativeWebView.postMessage('login-success:${token}');
+          window.close();
+      </script>
+  `);
 });
+
 
 // SMTP Configuration
 const transporter = nodemailer.createTransport({
