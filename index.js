@@ -14,7 +14,7 @@ const crypto = require("crypto"); // Add at the top to import crypto
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 443;
 const IP_ADDRESS = process.env.IP_ADDRESS || "localhost";
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret_key";
 const SESSION_SECRET = process.env.SESSION_SECRET || "default_session_secret_key";
