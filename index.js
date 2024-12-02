@@ -137,27 +137,41 @@ app.get("/login-success", (req, res) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Login Success</title>
+        <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
           body {
             font-family: 'Inter', Arial, sans-serif;
-            background-color: #eef2f7;
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            overflow: hidden;
             color: #333;
+          }
+          #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #1c3d5a, #1c96dd);
           }
           .container {
             text-align: center;
-            background: linear-gradient(145deg, #ffffff, #f3f6fa);
+            background: rgba(255, 255, 255, 0.9);
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
             max-width: 500px;
             width: 90%;
+            animation: fadeIn 1.2s ease-out;
           }
           .logo {
             width: 120px;
@@ -202,9 +216,20 @@ app.get("/login-success", (req, res) => {
             font-size: 14px;
             color: #9aa6b1;
           }
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
         </style>
       </head>
       <body>
+        <div id="particles-js"></div>
         <div class="container">
           <img src="/assets/images/logo.png" alt="App Logo" class="logo" />
           <h1>Check Your Google Mail!</h1>
@@ -213,11 +238,68 @@ app.get("/login-success", (req, res) => {
           
           <div class="footer">&copy; 2024 Anatomy. All rights reserved.</div>
         </div>
+        <script>
+          // Particle.js configuration
+          particlesJS("particles-js", {
+            particles: {
+              number: { value: 100, density: { enable: true, value_area: 800 } },
+              color: { value: "#ffffff" },
+              shape: {
+                type: "circle",
+                stroke: { width: 0, color: "#000000" },
+                polygon: { nb_sides: 5 }
+              },
+              opacity: {
+                value: 0.5,
+                random: false,
+                anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false }
+              },
+              size: {
+                value: 5,
+                random: true,
+                anim: { enable: false, speed: 40, size_min: 0.1, sync: false }
+              },
+              line_linked: {
+                enable: true,
+                distance: 150,
+                color: "#ffffff",
+                opacity: 0.4,
+                width: 1
+              },
+              move: {
+                enable: true,
+                speed: 6,
+                direction: "none",
+                random: false,
+                straight: false,
+                out_mode: "out",
+                bounce: false,
+                attract: { enable: false, rotateX: 600, rotateY: 1200 }
+              }
+            },
+            interactivity: {
+              detect_on: "canvas",
+              events: {
+                onhover: { enable: true, mode: "repulse" },
+                onclick: { enable: true, mode: "push" },
+                resize: true
+              },
+              modes: {
+                grab: { distance: 400, line_linked: { opacity: 1 } },
+                bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
+                repulse: { distance: 200, duration: 0.4 },
+                push: { particles_nb: 4 },
+                remove: { particles_nb: 2 }
+              }
+            },
+            retina_detect: true
+          });
+        </script>
       </body>
     </html>
-`);
-
+  `);
 });
+
 
 
 
