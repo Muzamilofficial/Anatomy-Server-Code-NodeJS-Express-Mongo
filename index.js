@@ -130,8 +130,103 @@ app.get("/auth/google", passport.authenticate("google", { scope: ["email", "prof
 // Login Success Page
 app.get("/login-success", (req, res) => {
   const email = req.query.email; // Retrieve email from the query string
-  const token = req.query.token; // Retrieve token from the query string
-  res.send(`... // Add the rest of your HTML content here`);
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login Success</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+          body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #eef2f7;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+          }
+          .container {
+            text-align: center;
+            background: linear-gradient(145deg, #ffffff, #f3f6fa);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+          }
+          .logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+          }
+          h1 {
+            color: #1c3d5a;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 20px;
+          }
+          p {
+            color: #5f6f81;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+          }
+          strong {
+            color: #1c3d5a;
+          }
+          .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            background-color: #1c3d5a;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(28, 61, 90, 0.2);
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+          }
+          .btn:hover {
+            background-color: #245b8a;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(36, 91, 138, 0.3);
+          }
+          .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #9aa6b1;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <img src="/assets/images/logo.png" alt="App Logo" class="logo" />
+          <h1>Login Successful!</h1>
+          <p>Welcome, <strong>${email}</strong>. Your login was successful.</p>
+          <p>You can now close this window.</p>
+          <div class="footer">&copy; 2024 Anatomy. All rights reserved.</div>
+        </div>
+        <script>
+          // Notify the app of login success
+          const redirectUri = "${req.query.redirect_uri || 'yourapp://callback'}";
+          if (window.opener) {
+            // Notify the parent window and close
+            window.opener.postMessage({ success: true, email: "${email}" }, "*");
+            window.close();
+          } else if (redirectUri) {
+            // Redirect if no parent window (fallback for non-popup scenarios)
+            window.location.href = redirectUri;
+          }
+        </script>
+      </body>
+    </html>
+  `);
 });
 
 
@@ -141,10 +236,9 @@ app.get("/login-success", (req, res) => {
 app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
   const { token, profile } = req.user;
 
-  // After login, redirect to success page with email and token
-  res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}&token=${encodeURIComponent(token)}`);
+  // After the login, you can redirect to a success page
+  res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}`);
 });
-
 
 // SMTP Configuration
 const transporter = nodemailer.createTransport({
