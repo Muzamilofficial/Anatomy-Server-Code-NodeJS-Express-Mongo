@@ -227,7 +227,7 @@ app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/"
   const { profile } = req.user;
 
   // Redirect to Home.jsx with email as a query parameter
-  res.redirect(`/home?email=${encodeURIComponent(profile.emails[0].value)}`);
+  res.redirect(`/HomeScreen?email=${encodeURIComponent(profile.emails[0].value)}`);
 });
 
 
