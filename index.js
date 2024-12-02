@@ -229,18 +229,8 @@ app.get(
   (req, res) => {
     const { token, profile } = req.user;
 
-    // Print the email and token on the screen
-    res.send(`
-      <h1>Login Successful</h1>
-      <p>Email: ${profile.emails[0].value}</p>
-      <p>Token: ${token}</p>
-      <p><a href="/login-success?email=${encodeURIComponent(profile.emails[0].value)}">Proceed</a></p>
-    `);
-
-    // Optionally, if you still want to redirect, you can do so after showing this page
-    // setTimeout(() => {
-    //   res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}`);
-    // }, 5000); // Redirect after 5 seconds
+    // Redirect to HomeScreen with email and token
+    res.redirect(`/home?email=${encodeURIComponent(profile.emails[0].value)}&token=${encodeURIComponent(token)}`);
   }
 );
 
