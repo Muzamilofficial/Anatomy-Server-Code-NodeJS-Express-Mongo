@@ -644,7 +644,7 @@ app.get("/", (req, res) => {
         <div class="header">
           <img src="/assets/images/logo.png" alt="App Logo" />
           <div>
-            <h1>Anatomy Server Dashboard</h1>
+            <h1>Anatomy Test Server Dashboard</h1>
             <p>3D Virtually Perfect</p>
           </div>
         </div>
