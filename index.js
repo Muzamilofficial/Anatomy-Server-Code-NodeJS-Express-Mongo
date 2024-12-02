@@ -223,22 +223,26 @@ app.get("/login-success", (req, res) => {
 
 
 
-app.get('/auth/google/callback', passport.authenticate('google', {
-  failureRedirect: '/login', // Redirect to login on failure
-}), (req, res) => {
-  // Successful login, send token and user data to frontend
-  const user = req.user;
-  const token = user.token; // Assuming token is stored after successful login
-  const email = user.profile.emails[0].value;
+app.get(
+  "/auth/callback",
+  passport.authenticate("google", { failureRedirect: "/" }),
+  (req, res) => {
+    const { token, profile } = req.user;
 
-  // Render the page and send token and email to the frontend
-  res.render('welcome', {
-    success: true,
-    token: token,
-    userEmail: email
-  });
-});
+    // Print the email and token on the screen
+    res.send(`
+      <h1>Login Successful</h1>
+      <p>Email: ${profile.emails[0].value}</p>
+      <p>Token: ${token}</p>
+      <p><a href="/login-success?email=${encodeURIComponent(profile.emails[0].value)}">Proceed</a></p>
+    `);
 
+    // Optionally, if you still want to redirect, you can do so after showing this page
+    // setTimeout(() => {
+    //   res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}`);
+    // }, 5000); // Redirect after 5 seconds
+  }
+);
 
 
 // SMTP Configuration
