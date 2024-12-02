@@ -154,44 +154,47 @@ app.get("/login-success", (req, res) => {
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            color: #333;
+            color: #fff;
           }
           #particles-js {
             position: absolute;
             width: 100%;
             height: 100%;
             z-index: -1;
-            background: linear-gradient(135deg, #1c3d5a, #1c96dd);
+            background-color: #000; /* Black background theme */
           }
           .container {
             text-align: center;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(30, 30, 30, 0.9); /* Semi-transparent dark container */
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
             max-width: 500px;
             width: 90%;
             animation: fadeIn 1.2s ease-out;
           }
           .logo {
             width: 120px;
-            height: auto;
+            height: 120px;
+            border-radius: 50%; /* Circular logo */
             margin-bottom: 20px;
+            border: 3px solid #fff; /* Optional: white border for logo */
+            object-fit: cover; /* Ensures the image fits within the circle */
           }
           h1 {
-            color: #1c3d5a;
+            color: #fff;
             font-size: 28px;
             font-weight: 600;
             margin-bottom: 20px;
           }
           p {
-            color: #5f6f81;
+            color: #aaa;
             font-size: 16px;
             line-height: 1.6;
             margin-bottom: 15px;
           }
           strong {
-            color: #1c3d5a;
+            color: #fff;
           }
           .btn {
             display: inline-block;
@@ -203,18 +206,18 @@ app.get("/login-success", (req, res) => {
             font-weight: 500;
             text-decoration: none;
             border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(28, 61, 90, 0.2);
+            box-shadow: 0 4px 10px rgba(28, 61, 90, 0.4);
             transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
           }
           .btn:hover {
             background-color: #245b8a;
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(36, 91, 138, 0.3);
+            box-shadow: 0 8px 20px rgba(36, 91, 138, 0.5);
           }
           .footer {
             margin-top: 30px;
             font-size: 14px;
-            color: #9aa6b1;
+            color: #666;
           }
           @keyframes fadeIn {
             from {
@@ -243,7 +246,7 @@ app.get("/login-success", (req, res) => {
           particlesJS("particles-js", {
             particles: {
               number: { value: 100, density: { enable: true, value_area: 800 } },
-              color: { value: "#ffffff" },
+              color: { value: "#ffffff" }, /* White particles for contrast */
               shape: {
                 type: "circle",
                 stroke: { width: 0, color: "#000000" },
