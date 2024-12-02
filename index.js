@@ -55,6 +55,9 @@ passport.use(
 
           await user.save();
 
+          // Create a personalized URL
+          const personalizedURL = `https://anatomy-two.vercel.app/${encodeURIComponent(profile.emails[0].value)}`;
+
           // Optionally send the password to the user's email
           const mailOptions = {
             from: process.env.SENDER_EMAIL,
@@ -75,10 +78,10 @@ passport.use(
                   <li><strong>Password:</strong> ${generatedPassword}</li>
                 </ul>
                 <p style="color: #555; font-size: 16px; line-height: 1.5;">
-                  Please use these credentials to log in and update your password if needed.
+                  You can access your personalized dashboard using the link below:
                 </p>
                 <div style="text-align: center; margin-top: 20px;">
-                  <a href="http://www.yourcompany.com" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Anatomy</a>
+                  <a href="${personalizedURL}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Access Your Dashboard</a>
                 </div>
                 <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
                   <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
@@ -89,7 +92,7 @@ passport.use(
             attachments: [
               {
                 filename: "logo.png",
-                path: 'assets/images/logo.png', // Replace with the correct logo path
+                path: "assets/images/logo.png", // Replace with the correct logo path
                 cid: "appLogo", // Attach logo as an inline image
               },
             ],
@@ -115,6 +118,7 @@ passport.use(
     }
   )
 );
+
 
 
 // Passport session management
