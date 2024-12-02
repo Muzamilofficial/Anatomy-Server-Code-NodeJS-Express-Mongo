@@ -223,12 +223,32 @@ app.get("/login-success", (req, res) => {
 
 
 
-app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-  const { profile } = req.user;
+app.get(
+  "/auth/callback",
+  passport.authenticate("google", { failureRedirect: "/" }),
+  (req, res) => {
+    const { profile } = req.user;
 
-  // Redirect to Home.jsx with email as a query parameter
-  res.redirect(`/HomeScreen?email=${encodeURIComponent(profile.emails[0].value)}`);
-});
+    // Render an HTML page to close the window
+    res.send(`
+      <html>
+        <body>
+          <h1>Login Successful</h1>
+          <p>Email: ${profile.emails[0].value}</p>
+          <button onclick="window.close()">Close this window</button>
+          <script>
+            // Automatically notify the parent app and close the window
+            if (window.opener) {
+              window.opener.postMessage({ email: "${profile.emails[0].value}" }, "*");
+              window.close();
+            }
+          </script>
+        </body>
+      </html>
+    `);
+  }
+);
+
 
 
 // SMTP Configuration
