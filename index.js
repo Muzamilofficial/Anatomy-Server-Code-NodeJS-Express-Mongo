@@ -223,12 +223,17 @@ app.get("/login-success", (req, res) => {
 
 
 
-app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-  const { token, profile } = req.user;
-
-  // After the login, you can redirect to a success page
-  res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}`);
+app.get('/auth/google/callback', passport.authenticate('google', {
+  failureRedirect: '/login', // Redirect to login on failure
+}), (req, res) => {
+  // Successful login, send token and user data to frontend
+  const user = req.user;
+  const token = user.token; // Assuming token is stored after successful login
+  
+  // Send user info along with token as a response
+  res.json({ success: true, token: token, userEmail: user.profile.emails[0].value });
 });
+
 
 // SMTP Configuration
 const transporter = nodemailer.createTransport({
@@ -319,8 +324,9 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String },
-  googleId: { type: String, unique: true },
+  googleId: { type: String }, // Removed unique constraint
 });
+
 
 const User = mongoose.model("User", userSchema);
 
@@ -644,7 +650,7 @@ app.get("/", (req, res) => {
         <div class="header">
           <img src="/assets/images/logo.png" alt="App Logo" />
           <div>
-            <h1>Anatomy Test Server Dashboard</h1>
+            <h1>Anatomy Server Dashboard</h1>
             <p>3D Virtually Perfect</p>
           </div>
         </div>
