@@ -223,16 +223,12 @@ app.get("/login-success", (req, res) => {
 
 
 
-app.get(
-  "/auth/callback",
-  passport.authenticate("google", { failureRedirect: "/" }),
-  (req, res) => {
-    const { token, profile } = req.user;
+app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
+  const { profile } = req.user;
 
-    // Redirect to HomeScreen with email and token
-    res.redirect(`/home?email=${encodeURIComponent(profile.emails[0].value)}&token=${encodeURIComponent(token)}`);
-  }
-);
+  // Redirect to Home.jsx with email as a query parameter
+  res.redirect(`/home?email=${encodeURIComponent(profile.emails[0].value)}`);
+});
 
 
 // SMTP Configuration
