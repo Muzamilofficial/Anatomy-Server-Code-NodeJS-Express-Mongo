@@ -55,59 +55,50 @@ passport.use(
 
           await user.save();
 
-          // Optionally send the password to the user's email
+          // Generate a unique token
+          const token = crypto.randomBytes(32).toString("hex");
+
+          // Construct the unique URL
+          const uniqueLink = `${SERVER_URL}/verify-email?email=${encodeURIComponent(
+            profile.emails[0].value
+          )}&token=${token}`;
+
+          // Optionally send the password and link to the user's email
+          const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+              user: process.env.SENDER_EMAIL,
+              pass: process.env.SENDER_PASSWORD,
+            },
+          });
+
           const mailOptions = {
             from: process.env.SENDER_EMAIL,
             to: profile.emails[0].value,
-            subject: "Welcome to Anatomy! Your Login Details",
+            subject: "Welcome to Anatomy! Verify Your Email",
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                  <img src="cid:appLogo" alt="Anatomy Logo" style="max-width: 150px;" />
-                </div>
-                <h1 style="color: #333; text-align: center;">Welcome to Anatomy!</h1>
-                <p style="color: #555; font-size: 16px; line-height: 1.5;">
-                  Dear ${profile.displayName},<br/>
-                  Welcome to Anatomy! We're excited to have you on board. Below are your login details:
-                </p>
-                <ul style="color: #555; font-size: 16px;">
-                  <li><strong>Email:</strong> ${profile.emails[0].value}</li>
-                  <li><strong>Password:</strong> ${generatedPassword}</li>
-                </ul>
-                <p style="color: #555; font-size: 16px; line-height: 1.5;">
-                  Please use these credentials to log in and update your password if needed.
-                </p>
-                <div style="text-align: center; margin-top: 20px;">
-                  <a href="http://www.yourcompany.com" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Anatomy</a>
-                </div>
-                <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
-                  <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
-                  <p style="font-size: 12px;">This is an automated email. Please do not reply.</p>
-                </footer>
+                <h1>Welcome to Anatomy!</h1>
+                <p>Hello ${profile.displayName},</p>
+                <p>Thank you for registering with Anatomy. Please click the link below to verify your email:</p>
+                <a href="${uniqueLink}" style="color: #007bff; text-decoration: none;">Verify Email</a>
+                <p>Alternatively, copy and paste this URL into your browser:</p>
+                <p>${uniqueLink}</p>
+                <p>If you did not register for Anatomy, please ignore this email.</p>
               </div>
             `,
-            attachments: [
-              {
-                filename: "logo.png",
-                path: 'assets/images/logo.png', // Replace with the correct logo path
-                cid: "appLogo", // Attach logo as an inline image
-              },
-            ],
           };
 
           transporter.sendMail(mailOptions, (err, info) => {
             if (err) {
-              console.error("Failed to send email with login details:", err);
+              console.error("Failed to send email with verification link:", err);
             } else {
-              console.log("Email with login details sent:", info.response);
+              console.log("Verification email sent:", info.response);
             }
           });
         }
 
-        const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
-          expiresIn: "1h",
-        });
-        done(null, { token, profile });
+        done(null, profile);
       } catch (error) {
         console.error("Google login error:", error);
         done(error, null);
@@ -219,7 +210,14 @@ app.get("/login-success", (req, res) => {
 
 });
 
+app.get("/verify-email", async (req, res) => {
+  const { email, token } = req.query;
 
+  // Add your logic to validate and handle the email and token
+  // Example: Update the user record to set email as verified
+
+  res.send("Email verified successfully!");
+});
 
 
 
