@@ -226,14 +226,9 @@ app.get("/login-success", (req, res) => {
 app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
   const { token, profile } = req.user;
 
-  // Redirect to the success page with the email and token as query parameters
+  // After the login, you can redirect to a success page
   res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}&token=${token}`);
-
-  // Optional: Close the server after the redirection (use with caution)
-  // If you are using a development environment and you want to stop the server after the login:
-  process.exit(); // Closes the server after the callback
 });
-
 
 // SMTP Configuration
 const transporter = nodemailer.createTransport({
