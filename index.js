@@ -127,9 +127,14 @@ app.use(passport.session());
 
 app.get("/auth/google", passport.authenticate("google", { scope: ["email", "profile"] }));
 
-// Login Success Page
 app.get("/login-success", (req, res) => {
   const email = req.query.email; // Retrieve email from the query string
+  const token = req.query.token; // Assuming the token is passed in the query as well
+  
+  // Log the received email and token to the console
+  console.log('Email received:', email);
+  console.log('Token received:', token);
+
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -161,11 +166,11 @@ app.get("/login-success", (req, res) => {
             width: 100%;
             height: 100%;
             z-index: -1;
-            background-color: #000; /* Black background theme */
+            background-color: #000;
           }
           .container {
             text-align: center;
-            background: rgba(30, 30, 30, 0.9); /* Semi-transparent dark container */
+            background: rgba(30, 30, 30, 0.9);
             padding: 40px;
             border-radius: 15px;
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
@@ -176,10 +181,10 @@ app.get("/login-success", (req, res) => {
           .logo {
             width: 120px;
             height: 120px;
-            border-radius: 50%; /* Circular logo */
+            border-radius: 50%;
             margin-bottom: 20px;
-            border: 3px solid #fff; /* Optional: white border for logo */
-            object-fit: cover; /* Ensures the image fits within the circle */
+            border: 3px solid #fff;
+            object-fit: cover;
           }
           h1 {
             color: #fff;
@@ -238,61 +243,26 @@ app.get("/login-success", (req, res) => {
           <h1>Check Your Google Mail!</h1>
           <p>An email has been sent to your Google account <strong>${email}</strong> with your login credentials.</p>
           <p>Please check your inbox to continue. If you haven't received the email, kindly check your spam folder or try again later.</p>
-          
           <div class="footer">&copy; 2024 Anatomy. All rights reserved.</div>
         </div>
         <script>
-          // Particle.js configuration
           particlesJS("particles-js", {
             particles: {
               number: { value: 100, density: { enable: true, value_area: 800 } },
-              color: { value: "#ffffff" }, /* White particles for contrast */
-              shape: {
-                type: "circle",
-                stroke: { width: 0, color: "#000000" },
-                polygon: { nb_sides: 5 }
-              },
-              opacity: {
-                value: 0.5,
-                random: false,
-                anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false }
-              },
-              size: {
-                value: 5,
-                random: true,
-                anim: { enable: false, speed: 40, size_min: 0.1, sync: false }
-              },
-              line_linked: {
-                enable: true,
-                distance: 150,
-                color: "#ffffff",
-                opacity: 0.4,
-                width: 1
-              },
-              move: {
-                enable: true,
-                speed: 6,
-                direction: "none",
-                random: false,
-                straight: false,
-                out_mode: "out",
-                bounce: false,
-                attract: { enable: false, rotateX: 600, rotateY: 1200 }
-              }
+              color: { value: "#ffffff" },
+              shape: { type: "circle", stroke: { width: 0, color: "#000000" }, polygon: { nb_sides: 5 } },
+              opacity: { value: 0.5 },
+              size: { value: 5, random: true },
+              line_linked: { enable: true, distance: 150, color: "#ffffff", opacity: 0.4, width: 1 },
+              move: { enable: true, speed: 6, direction: "none", random: false }
             },
             interactivity: {
               detect_on: "canvas",
-              events: {
-                onhover: { enable: true, mode: "repulse" },
-                onclick: { enable: true, mode: "push" },
-                resize: true
-              },
+              events: { onhover: { enable: true, mode: "repulse" }, onclick: { enable: true, mode: "push" } },
               modes: {
                 grab: { distance: 400, line_linked: { opacity: 1 } },
-                bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
-                repulse: { distance: 200, duration: 0.4 },
-                push: { particles_nb: 4 },
-                remove: { particles_nb: 2 }
+                bubble: { distance: 400, size: 40, opacity: 8 },
+                repulse: { distance: 200, duration: 0.4 }
               }
             },
             retina_detect: true
@@ -302,6 +272,7 @@ app.get("/login-success", (req, res) => {
     </html>
   `);
 });
+;
 
 
 
