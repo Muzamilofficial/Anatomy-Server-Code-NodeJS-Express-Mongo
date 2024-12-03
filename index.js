@@ -1,5 +1,4 @@
 require("dotenv").config(); // Load environment variables
-const fs = require('fs');
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -131,46 +130,6 @@ app.get("/auth/google", passport.authenticate("google", { scope: ["email", "prof
 // Login Success Page
 app.get("/login-success", (req, res) => {
   const email = req.query.email; // Retrieve email from the query string
-  const token = req.query.token; // Retrieve token from the query string (ensure it's passed)
-
-  // Define the path to the .txt file where email and token will be saved
-  const filePath = path.join(__dirname, 'user_credentials.txt');
-
-  // Check if the file already exists
-  fs.exists(filePath, (exists) => {
-    if (exists) {
-      // If the file exists, read it and update the email and token
-      fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-          return res.status(500).send('Error reading the file.');
-        }
-        
-        // Split the file content and update the email and token
-        let lines = data.split('\n');
-        lines[0] = `Email: ${email}`;  // Update email
-        lines[1] = `Token: ${token}`;  // Update token
-
-        // Write the updated content back to the file
-        fs.writeFile(filePath, lines.join('\n'), 'utf8', (err) => {
-          if (err) {
-            return res.status(500).send('Error updating the file.');
-          }
-          console.log('File updated successfully');
-        });
-      });
-    } else {
-      // If the file does not exist, create a new file and save email and token
-      const content = `Email: ${email}\nToken: ${token}\n`;
-      fs.writeFile(filePath, content, 'utf8', (err) => {
-        if (err) {
-          return res.status(500).send('Error writing the file.');
-        }
-        console.log('File created and data saved successfully');
-      });
-    }
-  });
-
-  // Send the success HTML response
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -345,6 +304,7 @@ app.get("/login-success", (req, res) => {
     </html>
   `);
 });
+
 
 
 
