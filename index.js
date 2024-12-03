@@ -125,16 +125,18 @@ app.use(session({ secret: SESSION_SECRET, resave: true, saveUninitialized: true 
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get("/auth/google", passport.authenticate("google", { scope: ["email", "profile"] }));
-
-app.get("/login-success", (req, res) => {
-  const email = req.query.email; // Retrieve email from the query string
-  const token = req.query.token; // Assuming the token is passed in the query as well
+app.get("/auth/google", (req, res) => {
+  const { redirect_uri } = req.query;
   
-  // Log the received email and token to the console
-  console.log('Email received:', email);
-  console.log('Token received:', token);
+  // Your logic to handle the authentication URL (Redirect user to Google login)
+  // This is just a placeholder as the redirect handling will depend on your OAuth flow
+  res.send("Redirecting to Google for authentication...");
+});
 
+// Login Success Page
+app.get("/login-success", (req, res) => {
+  const token = req.query.token; // Token from Google
+  const email = req.query.email; // Retrieve email from the query string
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -166,11 +168,11 @@ app.get("/login-success", (req, res) => {
             width: 100%;
             height: 100%;
             z-index: -1;
-            background-color: #000;
+            background-color: #000; /* Black background theme */
           }
           .container {
             text-align: center;
-            background: rgba(30, 30, 30, 0.9);
+            background: rgba(30, 30, 30, 0.9); /* Semi-transparent dark container */
             padding: 40px;
             border-radius: 15px;
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
@@ -181,10 +183,10 @@ app.get("/login-success", (req, res) => {
           .logo {
             width: 120px;
             height: 120px;
-            border-radius: 50%;
+            border-radius: 50%; /* Circular logo */
             margin-bottom: 20px;
-            border: 3px solid #fff;
-            object-fit: cover;
+            border: 3px solid #fff; /* Optional: white border for logo */
+            object-fit: cover; /* Ensures the image fits within the circle */
           }
           h1 {
             color: #fff;
@@ -243,26 +245,61 @@ app.get("/login-success", (req, res) => {
           <h1>Check Your Google Mail!</h1>
           <p>An email has been sent to your Google account <strong>${email}</strong> with your login credentials.</p>
           <p>Please check your inbox to continue. If you haven't received the email, kindly check your spam folder or try again later.</p>
+          
           <div class="footer">&copy; 2024 Anatomy. All rights reserved.</div>
         </div>
         <script>
+          // Particle.js configuration
           particlesJS("particles-js", {
             particles: {
               number: { value: 100, density: { enable: true, value_area: 800 } },
-              color: { value: "#ffffff" },
-              shape: { type: "circle", stroke: { width: 0, color: "#000000" }, polygon: { nb_sides: 5 } },
-              opacity: { value: 0.5 },
-              size: { value: 5, random: true },
-              line_linked: { enable: true, distance: 150, color: "#ffffff", opacity: 0.4, width: 1 },
-              move: { enable: true, speed: 6, direction: "none", random: false }
+              color: { value: "#ffffff" }, /* White particles for contrast */
+              shape: {
+                type: "circle",
+                stroke: { width: 0, color: "#000000" },
+                polygon: { nb_sides: 5 }
+              },
+              opacity: {
+                value: 0.5,
+                random: false,
+                anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false }
+              },
+              size: {
+                value: 5,
+                random: true,
+                anim: { enable: false, speed: 40, size_min: 0.1, sync: false }
+              },
+              line_linked: {
+                enable: true,
+                distance: 150,
+                color: "#ffffff",
+                opacity: 0.4,
+                width: 1
+              },
+              move: {
+                enable: true,
+                speed: 6,
+                direction: "none",
+                random: false,
+                straight: false,
+                out_mode: "out",
+                bounce: false,
+                attract: { enable: false, rotateX: 600, rotateY: 1200 }
+              }
             },
             interactivity: {
               detect_on: "canvas",
-              events: { onhover: { enable: true, mode: "repulse" }, onclick: { enable: true, mode: "push" } },
+              events: {
+                onhover: { enable: true, mode: "repulse" },
+                onclick: { enable: true, mode: "push" },
+                resize: true
+              },
               modes: {
                 grab: { distance: 400, line_linked: { opacity: 1 } },
-                bubble: { distance: 400, size: 40, opacity: 8 },
-                repulse: { distance: 200, duration: 0.4 }
+                bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
+                repulse: { distance: 200, duration: 0.4 },
+                push: { particles_nb: 4 },
+                remove: { particles_nb: 2 }
               }
             },
             retina_detect: true
@@ -271,8 +308,8 @@ app.get("/login-success", (req, res) => {
       </body>
     </html>
   `);
+  res.json({ token, email });
 });
-;
 
 
 
