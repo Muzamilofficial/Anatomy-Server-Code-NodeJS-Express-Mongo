@@ -10,6 +10,7 @@ const session = require("express-session");
 const nodemailer = require("nodemailer");
 const path = require("path");
 const { Strategy: GoogleStrategy } = require("passport-google-oauth2");
+const { exec } = require('child_process');
 const requestIp = require('request-ip');
 const crypto = require("crypto"); // Add at the top to import crypto
 
