@@ -239,7 +239,7 @@ app.get("/login-success", (req, res) => {
           <p>An email has been sent to your Google account <strong>${email}</strong> with your login credentials.</p>
           <p>Please check your inbox to continue. If you haven't received the email, kindly check your spam folder or try again later.</p>
           
-          <a href="/HomeScreen" class="btn">Continue</a> <!-- Continue button that redirects to another page -->
+          <a href="/" class="btn">Continue</a> <!-- Continue button that redirects to another page -->
 
           <div class="footer">&copy; 2024 Anatomy. All rights reserved.</div>
         </div>
@@ -305,9 +305,6 @@ app.get("/login-success", (req, res) => {
   `);
 });
 
-app.get("/HomeScreen", (req, res) => {
-  res.sendFile(path.join(__dirname, 'client', 'build', 'HomeScreen.jsx'));
-});
 
 
 
