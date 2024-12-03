@@ -125,17 +125,10 @@ app.use(session({ secret: SESSION_SECRET, resave: true, saveUninitialized: true 
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get("/auth/google", (req, res) => {
-  const { redirect_uri } = req.query;
-  
-  // Your logic to handle the authentication URL (Redirect user to Google login)
-  // This is just a placeholder as the redirect handling will depend on your OAuth flow
-  res.send("Redirecting to Google for authentication...");
-});
+app.get("/auth/google", passport.authenticate("google", { scope: ["email", "profile"] }));
 
 // Login Success Page
 app.get("/login-success", (req, res) => {
-  const token = req.query.token; // Token from Google
   const email = req.query.email; // Retrieve email from the query string
   res.send(`
     <!DOCTYPE html>
@@ -308,7 +301,6 @@ app.get("/login-success", (req, res) => {
       </body>
     </html>
   `);
-  res.json({ token, email });
 });
 
 
