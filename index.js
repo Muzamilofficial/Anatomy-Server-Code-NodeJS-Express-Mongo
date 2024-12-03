@@ -24,17 +24,61 @@ let loggedInUserEmail = null;
 // Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
+app.use(session({ 
+  secret: SESSION_SECRET, 
+  resave: true, 
+  saveUninitialized: true 
+}));
 
 
 
 passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.CALLBACK_URL,
-      passReqToCallback: true,
-    },
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: process.env.CALLBACK_URL,
+        passReqToCallback: true,
+      },
+      async (request, accessToken, refreshToken, profile, done) => {
+        try {
+          let user = await User.findOne({ googleId: profile.id });
+          if (!user) {
+            // User doesn't exist, create one
+            const generatedPassword = crypto.randomBytes(4).toString("hex");
+            const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+  
+            user = new User({
+              name: profile.displayName,
+              email: profile.emails[0].value,
+              googleId: profile.id,
+              password: hashedPassword,
+            });
+  
+            await user.save();
+  
+            // Send email with credentials (optional)
+            const mailOptions = {
+              from: process.env.SENDER_EMAIL,
+              to: profile.emails[0].value,
+              subject: "Welcome to Anatomy! Your Login Details",
+              html: `Welcome to Anatomy! Your password is ${generatedPassword}`,
+            };
+            transporter.sendMail(mailOptions);
+          }
+  
+          const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
+  
+          // Instead of calling done directly, pass the token to the frontend
+          done(null, { token, profile });
+        } catch (error) {
+          console.error("Google login error:", error);
+          done(error, null);
+        }
+      }
+    ),
+  
     async (request, accessToken, refreshToken, profile, done) => {
       try {
         let user = await User.findOne({ googleId: profile.id });
@@ -129,182 +173,23 @@ app.get("/auth/google", passport.authenticate("google", { scope: ["email", "prof
 
 // Login Success Page
 app.get("/login-success", (req, res) => {
-  const email = req.query.email; // Retrieve email from the query string
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Login Success</title>
-        <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          body {
-            font-family: 'Inter', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            color: #fff;
-          }
-          #particles-js {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background-color: #000; /* Black background theme */
-          }
-          .container {
-            text-align: center;
-            background: rgba(30, 30, 30, 0.9); /* Semi-transparent dark container */
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
-            max-width: 500px;
-            width: 90%;
-            animation: fadeIn 1.2s ease-out;
-          }
-          .logo {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%; /* Circular logo */
-            margin-bottom: 20px;
-            border: 3px solid #fff; /* Optional: white border for logo */
-            object-fit: cover; /* Ensures the image fits within the circle */
-          }
-          h1 {
-            color: #fff;
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 20px;
-          }
-          p {
-            color: #aaa;
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 15px;
-          }
-          strong {
-            color: #fff;
-          }
-          .btn {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 25px;
-            background-color: #1c3d5a;
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 500;
-            text-decoration: none;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(28, 61, 90, 0.4);
-            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
-          }
-          .btn:hover {
-            background-color: #245b8a;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(36, 91, 138, 0.5);
-          }
-          .footer {
-            margin-top: 30px;
-            font-size: 14px;
-            color: #666;
-          }
-          @keyframes fadeIn {
-            from {
-              opacity: 0;
-              transform: translateY(-10px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div id="particles-js"></div>
-        <div class="container">
-          <img src="/assets/images/logo.png" alt="App Logo" class="logo" />
-          <h1>Check Your Google Mail!</h1>
-          <p>An email has been sent to your Google account <strong>${email}</strong> with your login credentials.</p>
-          <p>Please check your inbox to continue. If you haven't received the email, kindly check your spam folder or try again later.</p>
-          
-          <a href="/" class="btn">Continue</a> <!-- Continue button that redirects to another page -->
-
-          <div class="footer">&copy; 2024 Anatomy. All rights reserved.</div>
-        </div>
-        <script>
-          // Particle.js configuration
-          particlesJS("particles-js", {
-            particles: {
-              number: { value: 100, density: { enable: true, value_area: 800 } },
-              color: { value: "#ffffff" }, /* White particles for contrast */
-              shape: {
-                type: "circle",
-                stroke: { width: 0, color: "#000000" },
-                polygon: { nb_sides: 5 }
-              },
-              opacity: {
-                value: 0.5,
-                random: false,
-                anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false }
-              },
-              size: {
-                value: 5,
-                random: true,
-                anim: { enable: false, speed: 40, size_min: 0.1, sync: false }
-              },
-              line_linked: {
-                enable: true,
-                distance: 150,
-                color: "#ffffff",
-                opacity: 0.4,
-                width: 1
-              },
-              move: {
-                enable: true,
-                speed: 6,
-                direction: "none",
-                random: false,
-                straight: false,
-                out_mode: "out",
-                bounce: false,
-                attract: { enable: false, rotateX: 600, rotateY: 1200 }
-              }
-            },
-            interactivity: {
-              detect_on: "canvas",
-              events: {
-                onhover: { enable: true, mode: "repulse" },
-                onclick: { enable: true, mode: "push" },
-                resize: true
-              },
-              modes: {
-                grab: { distance: 400, line_linked: { opacity: 1 } },
-                bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
-                repulse: { distance: 200, duration: 0.4 },
-                push: { particles_nb: 4 },
-                remove: { particles_nb: 2 }
-              }
-            },
-            retina_detect: true
-          });
-        </script>
-      </body>
-    </html>
-  `);
+  const { token, profile } = req.user;  // Access the token from session or user object
+  if (token) {
+    // Redirect with token as query parameter or send as part of the response
+    res.redirect(`/welcome?token=${token}&email=${profile.emails[0].value}`);
+  } else {
+    res.send('Login failed or token missing.');
+  }
 });
 
+app.get("/welcome", (req, res) => {
+  const token = req.query.token;  // Get token from query parameter
+  const email = req.query.email;  // Get email from query parameter
+  res.send(`
+    <h1>Welcome, ${email}</h1>
+    <p>Your token: ${token}</p>
+  `);
+});
 
 
 
