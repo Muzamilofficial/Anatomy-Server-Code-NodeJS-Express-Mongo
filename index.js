@@ -45,13 +45,12 @@ passport.use(
           // Hash the generated password
           const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
-          // Create a new user with the generated password and the Redirect URI
+          // Create a new user with the generated password
           user = new User({
             name: profile.displayName,
             email: profile.emails[0].value,
             googleId: profile.id,
             password: hashedPassword, // Save hashed password in DB
-            redirectUri: 'exp://192.168.0.111:8081' // Save the Redirect URI here
           });
 
           await user.save();
@@ -116,7 +115,6 @@ passport.use(
     }
   )
 );
-
 
 
 // Passport session management
