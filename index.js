@@ -10,8 +10,6 @@ const session = require("express-session");
 const nodemailer = require("nodemailer");
 const path = require("path");
 const { Strategy: GoogleStrategy } = require("passport-google-oauth2");
-const { exec } = require('child_process');
-const requestIp = require('request-ip');
 const crypto = require("crypto"); // Add at the top to import crypto
 
 // Initialize Express app
@@ -131,20 +129,7 @@ app.get("/auth/google", passport.authenticate("google", { scope: ["email", "prof
 
 // Login Success Page
 app.get("/login-success", (req, res) => {
-  const email = req.query.email;
-  const clientIp = req.clientIp; // Get the client's IP address
-  
-  // Use ARP to resolve MAC address (only works in local network environments)
-  exec(`arp -a ${clientIp}`, (err, stdout, stderr) => {
-    if (err || stderr) {
-      console.error("Error fetching MAC address:", err || stderr);
-      res.status(500).send("Unable to fetch MAC address.");
-      return;
-    }
-
-    // Parse MAC address from ARP output
-    const macAddress = stdout.match(/([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})/g);
-    const mac = macAddress ? macAddress[0] : "Not available";
+  const email = req.query.email; // Retrieve email from the query string
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -253,7 +238,7 @@ app.get("/login-success", (req, res) => {
           <h1>Check Your Google Mail!</h1>
           <p>An email has been sent to your Google account <strong>${email}</strong> with your login credentials.</p>
           <p>Please check your inbox to continue. If you haven't received the email, kindly check your spam folder or try again later.</p>
-          <p>MAC Address: <strong>${mac}</strong></p>
+          
           <a href="/" class="btn">Continue</a> <!-- Continue button that redirects to another page -->
 
           <div class="footer">&copy; 2024 Anatomy. All rights reserved.</div>
@@ -317,8 +302,7 @@ app.get("/login-success", (req, res) => {
         </script>
       </body>
     </html>
-    `);
-  });
+  `);
 });
 
 
