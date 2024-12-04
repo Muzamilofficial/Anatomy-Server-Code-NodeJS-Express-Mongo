@@ -312,15 +312,17 @@ app.get("/login-success", (req, res) => {
 
 
 app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-  // Extract token and profile from the authenticated user
   const { token, profile } = req.user;
 
-  // Send the email and token as part of the response
   res.send(`
     <p><strong>Email:</strong> ${profile.email}</p>
     <p><strong>Token:</strong> ${token}</p>
   `);
+
+  // Send the token and email as query params to the frontend
+  res.redirect(`Bioscope://auth/callback?token=${token}&email=${profile.email}`);
 });
+
 
 
 // SMTP Configuration
