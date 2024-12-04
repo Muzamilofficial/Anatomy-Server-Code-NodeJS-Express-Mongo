@@ -30,7 +30,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const { OAuth2Client } = require("google-auth-library");
 
-const CLIENT_ID = "460147628092-d4crjhn1s5lta2rcj8klpjmutrgbsi3s.apps.googleusercontent.com"; // Replace with your Google Client ID
 const client = new OAuth2Client(CLIENT_ID);
 
 app.use(bodyParser.json());
@@ -42,7 +41,7 @@ app.post("/verify-token", async (req, res) => {
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: CLIENT_ID,
+      audience: env.process.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
