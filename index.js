@@ -49,36 +49,100 @@ passport.use(
       callbackURL: process.env.CALLBACK_URL,
       passReqToCallback: true,
     },
-    async (req, accessToken, refreshToken, profile, done) => {
+    async (request, accessToken, refreshToken, profile, done) => {
       try {
-        const otp = generateOTP();
-        const otpExpiry = new Date(Date.now() + OTP_EXPIRY);
+        let user = await User.findOne({ email: profile.emails[0].value }); // Check if email already exists
 
-        let user = await User.findOneAndUpdate(
-          { googleId: profile.id },
-          { $set: { name: profile.displayName, email: profile.emails[0].value, otp, otpExpiry } },
-          { new: true, upsert: true }
-        );
+        if (!user) {
+          // User doesn't exist, create a new one
+          const otp = generateOTP();
+          const otpExpiry = new Date(Date.now() + 60 * 1000); // 60 seconds from now
 
-        // Send OTP email
-        const mailOptions = {
-          from: process.env.SENDER_EMAIL,
-          to: user.email,
-          subject: "Your Anatomy OTP",
-          html: `
-            <h1>Your OTP for Anatomy Login</h1>
-            <p>Dear ${user.name},</p>
-            <p>Your OTP is <strong>${otp}</strong>. It is valid for 60 seconds.</p>
-          `,
-        };
-        transporter.sendMail(mailOptions, (err) => {
-          if (err) console.error("Failed to send email:", err);
-          else console.log("OTP email sent successfully");
+          user = new User({
+            name: profile.displayName,
+            email: profile.emails[0].value,
+            googleId: profile.id,
+            otp,
+            otpExpiry,
+          });
+
+          await user.save();
+
+          // Send OTP email (same as before)
+          const mailOptions = {
+            from: process.env.SENDER_EMAIL,
+            to: profile.emails[0].value,
+            subject: "Welcome to Anatomy! Your Login Details",
+            html: `...`, // Email content here
+            attachments: [
+              {
+                filename: "logo.png",
+                path: 'assets/images/logo.png', // Replace with the correct logo path
+                cid: "appLogo", // Attach logo as an inline image
+              },
+            ],
+          };
+
+          transporter.sendMail(mailOptions, (err, info) => {
+            if (err) {
+              console.error("Failed to send email with OTP:", err);
+            } else {
+              console.log("OTP email sent:", info.response);
+            }
+          });
+        } else {
+          // User exists, update OTP
+          const otp = generateOTP();
+          const otpExpiry = new Date(Date.now() + 60 * 1000); // 60 seconds from now
+
+          // Update OTP and expiry fields
+          user.otp = otp;
+          user.otpExpiry = otpExpiry;
+
+          await user.save();
+
+          // Send OTP email (same as before)
+          const mailOptions = {
+            from: process.env.SENDER_EMAIL,
+            to: profile.emails[0].value,
+            subject: "Your OTP for Anatomy Login",
+            html: `...`, // Email content here
+            attachments: [
+              {
+                filename: "logo.png",
+                path: 'assets/images/logo.png', // Replace with the correct logo path
+                cid: "appLogo", // Attach logo as an inline image
+              },
+            ],
+          };
+
+          transporter.sendMail(mailOptions, (err, info) => {
+            if (err) {
+              console.error("Failed to send email with OTP:", err);
+            } else {
+              console.log("OTP email sent:", info.response);
+            }
+          });
+        }
+
+        setTimeout(async () => {
+          try {
+            const result = await User.updateOne(
+              { googleId: profile.id },
+              { $unset: { otp: "", otpExpiry: "" } }
+            );
+            console.log("OTP expired and deleted for user:", profile.emails[0].value, result);
+          } catch (err) {
+            console.error("Error deleting OTP:", err);
+          }
+        }, 60 * 1000); // 60 seconds
+        
+        const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
+          expiresIn: "1h",
         });
-
-        done(null, { email: user.email });
+        done(null, { token, profile });
       } catch (error) {
-        console.error("Error in Google authentication:", error);
+        console.error("Google login error:", error);
         done(error, null);
       }
     }
@@ -91,20 +155,26 @@ app.post("/validate-otp", async (req, res) => {
   try {
     const user = await User.findOne({ email });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-    if (!user.otp || user.otpExpiry < Date.now() || user.otp !== parseInt(otp)) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    if (user.otp !== parseInt(otp) || user.otpExpiry < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired OTP." });
     }
 
-    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
+    // OTP is valid, proceed with login
+    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    // Clear OTP after successful login
     user.otp = undefined;
     user.otpExpiry = undefined;
     await user.save();
 
     res.json({ message: "Login successful", token });
   } catch (error) {
-    console.error("Error validating OTP:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("OTP validation error:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 });
 
