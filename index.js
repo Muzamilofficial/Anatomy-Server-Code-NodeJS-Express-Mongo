@@ -19,11 +19,13 @@ const IP_ADDRESS = process.env.IP_ADDRESS || "localhost";
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret_key";
 const SESSION_SECRET = process.env.SESSION_SECRET || "default_session_secret_key";
 app.use("/assets", express.static(path.join(__dirname, "assets")));
+const generateOTP = () => Math.floor(10000 + Math.random() * 90000); // 5-digit OTP
 let loggedInUserEmail = null;
 
 // Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
+
 
 
 
@@ -38,24 +40,22 @@ passport.use(
     async (request, accessToken, refreshToken, profile, done) => {
       try {
         let user = await User.findOne({ googleId: profile.id });
+
         if (!user) {
-          // Generate a strong 8-character password
-          const generatedPassword = crypto.randomBytes(4).toString("hex");
+          const otp = generateOTP();
+          const otpExpiry = new Date(Date.now() + 60 * 1000); // 60 seconds from now
 
-          // Hash the generated password
-          const hashedPassword = await bcrypt.hash(generatedPassword, 10);
-
-          // Create a new user with the generated password
           user = new User({
             name: profile.displayName,
             email: profile.emails[0].value,
             googleId: profile.id,
-            password: hashedPassword, // Save hashed password in DB
+            otp,
+            otpExpiry,
           });
 
           await user.save();
 
-          // Optionally send the password to the user's email
+          // Send OTP email
           const mailOptions = {
             from: process.env.SENDER_EMAIL,
             to: profile.emails[0].value,
@@ -72,7 +72,7 @@ passport.use(
                 </p>
                 <ul style="color: #555; font-size: 16px;">
                   <li><strong>Email:</strong> ${profile.emails[0].value}</li>
-                  <li><strong>Password:</strong> ${generatedPassword}</li>
+                  <p>Your OTP is <strong>${otp}</strong>. It is valid for 60 seconds.</p>
                 </ul>
                 <p style="color: #555; font-size: 16px; line-height: 1.5;">
                   Please use these credentials to log in and update your password if needed.
@@ -97,9 +97,9 @@ passport.use(
 
           transporter.sendMail(mailOptions, (err, info) => {
             if (err) {
-              console.error("Failed to send email with login details:", err);
+              console.error("Failed to send email with OTP:", err);
             } else {
-              console.log("Email with login details sent:", info.response);
+              console.log("OTP email sent:", info.response);
             }
           });
         }
@@ -115,6 +115,41 @@ passport.use(
     }
   )
 );
+setTimeout(async () => {
+  await User.updateOne(
+    { googleId: profile.id },
+    { $unset: { otp: "", otpExpiry: "" } }
+  );
+  console.log("OTP expired and deleted for user:", profile.emails[0].value);
+}, 60 * 1000); // 60 seconds
+app.post("/validate-otp", async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    if (user.otp !== parseInt(otp) || user.otpExpiry < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
+
+    // OTP is valid, proceed with login
+    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    // Clear OTP after successful login
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+    await user.save();
+
+    res.json({ message: "Login successful", token });
+  } catch (error) {
+    console.error("OTP validation error:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
 
 
 // Passport session management
@@ -408,7 +443,9 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String },
-  googleId: { type: String }, // Removed unique constraint
+  googleId: { type: String }, // Removed unique constraint,
+  otp: Number,
+  otpExpiry: Date, // Timestamp for OTP expiration
 });
 
 
