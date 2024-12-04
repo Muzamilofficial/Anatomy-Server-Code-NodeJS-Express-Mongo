@@ -312,11 +312,17 @@ app.get("/login-success", (req, res) => {
 
 
 app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
+  // Extract token and profile from the authenticated user
   const { token, profile } = req.user;
 
-  // After the login, you can redirect to a success page
-  res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}&token=${token}`);
+  // Send the email and token as part of the response
+  res.send(`
+    <h1>Authentication Successful!</h1>
+    <p><strong>Email:</strong> ${profile.email}</p>
+    <p><strong>Token:</strong> ${token}</p>
+  `);
 });
+
 
 // SMTP Configuration
 const transporter = nodemailer.createTransport({
