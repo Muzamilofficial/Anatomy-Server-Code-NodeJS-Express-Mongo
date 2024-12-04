@@ -313,10 +313,9 @@ app.get("/login-success", (req, res) => {
 
 
 app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-
   const token = req.user.token;
   const email = req.user.profile.emails[0].value;
-  
+
   // Send the token and email to the React Native app via WebView
   res.send(`
     <script>
@@ -324,6 +323,7 @@ app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/"
     </script>
   `);
 });
+
 
 // SMTP Configuration
 const transporter = nodemailer.createTransport({
