@@ -317,7 +317,6 @@ app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/"
 
   // Send the email and token as part of the response
   res.send(`
-    <h1>Authentication Successful!</h1>
     <p><strong>Email:</strong> ${profile.email}</p>
     <p><strong>Token:</strong> ${token}</p>
   `);
