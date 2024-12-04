@@ -60,29 +60,7 @@ passport.use(
           await user.save();
 
           // Resend OTP email
-          const sendOtpEmail = (email, otp, name) => {
-            const mailOptions = {
-              from: process.env.SENDER_EMAIL,
-              to: email,
-              subject: "Your Login OTP for Anatomy",
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
-                  <h1>Welcome to Anatomy, ${name}!</h1>
-                  <p>Your OTP is <strong>${otp}</strong>. It is valid for 60 seconds.</p>
-                  <p>If you did not request this, please ignore this email.</p>
-                </div>
-              `,
-            };
-          
-            transporter.sendMail(mailOptions, (err, info) => {
-              if (err) {
-                console.error("Failed to send email with OTP:", err);
-              } else {
-                console.log("OTP email sent:", info.response);
-              }
-            });
-          };
-          
+          sendOtpEmail(profile.emails[0].value, otp, profile.displayName);
         } else {
           // New user registration
           user = new User({
