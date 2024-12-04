@@ -311,19 +311,18 @@ app.get("/login-success", (req, res) => {
 
 
 
-app.get(
-  '/auth/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
-  (req, res) => {
-    const { token, profile } = req.user;
+app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
+  const { token, profile } = req.user;
 
-    // Redirect back to the app with token and email
-    const redirectURL = `bioscope://profile?token=${token}&email=${encodeURIComponent(profile.email)}`;
-    res.redirect(redirectURL);
-  }
-);
+//   res.send(`
+//     <p><strong>Email:</strong> ${profile.email}</p>
+//     <p><strong>Token:</strong> ${token}</p>
+//   `);
+// });
 
-
+  // After the login, you can redirect to a success page
+  res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}&token=${token}`);
+});
 
 // SMTP Configuration
 const transporter = nodemailer.createTransport({
