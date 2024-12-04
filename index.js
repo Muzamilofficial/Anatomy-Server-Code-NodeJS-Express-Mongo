@@ -41,74 +41,50 @@ setInterval(async () => {
 
 
 
-// Google OAuth strategy
-passport.use(new GoogleStrategy(
-  {
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.CALLBACK_URL,
-    passReqToCallback: true,
-  },
-  async (request, accessToken, refreshToken, profile, done) => {
-    try {
-      let user = await User.findOne({ googleId: profile.id });
-
-      if (!user) {
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.CALLBACK_URL,
+      passReqToCallback: true,
+    },
+    async (req, accessToken, refreshToken, profile, done) => {
+      try {
         const otp = generateOTP();
-        const otpExpiry = new Date(Date.now() + 60 * 1000); // OTP valid for 60 seconds
+        const otpExpiry = new Date(Date.now() + OTP_EXPIRY);
 
-        user = new User({
-          name: profile.displayName,
-          email: profile.emails[0].value,
-          googleId: profile.id,
-          otp,
-          otpExpiry,
+        let user = await User.findOneAndUpdate(
+          { googleId: profile.id },
+          { $set: { name: profile.displayName, email: profile.emails[0].value, otp, otpExpiry } },
+          { new: true, upsert: true }
+        );
+
+        // Send OTP email
+        const mailOptions = {
+          from: process.env.SENDER_EMAIL,
+          to: user.email,
+          subject: "Your Anatomy OTP",
+          html: `
+            <h1>Your OTP for Anatomy Login</h1>
+            <p>Dear ${user.name},</p>
+            <p>Your OTP is <strong>${otp}</strong>. It is valid for 60 seconds.</p>
+          `,
+        };
+        transporter.sendMail(mailOptions, (err) => {
+          if (err) console.error("Failed to send email:", err);
+          else console.log("OTP email sent successfully");
         });
 
-        await user.save();
-        await sendOtpEmail(profile.emails[0].value, profile.displayName, otp);
+        done(null, { email: user.email });
+      } catch (error) {
+        console.error("Error in Google authentication:", error);
+        done(error, null);
       }
-
-      const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
-      done(null, { token, profile });
-    } catch (error) {
-      console.error("Google login error:", error);
-      done(error, null);
     }
-  }
-));
+  )
+);
 
-// Send OTP email
-async function sendOtpEmail(email, name, otp) {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.SENDER_EMAIL,
-      pass: process.env.SENDER_EMAIL_PASSWORD,
-    },
-  });
-
-  const mailOptions = {
-    from: process.env.SENDER_EMAIL,
-    to: email,
-    subject: "Welcome to Anatomy! Your Login Details",
-    html: `
-      <h1>Welcome to Anatomy!</h1>
-      <p>Hello ${name},</p>
-      <p>Your OTP is <strong>${otp}</strong>. It is valid for 60 seconds.</p>
-      <p>Thank you for joining us!</p>
-    `,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log("OTP email sent to:", email);
-  } catch (err) {
-    console.error("Failed to send OTP email:", err);
-  }
-}
-
-// OTP validation endpoint
 app.post("/validate-otp", async (req, res) => {
   const { email, otp } = req.body;
 
@@ -121,7 +97,12 @@ app.post("/validate-otp", async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP." });
     }
 
-    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
+    // OTP is valid, proceed with login
+    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    // Clear OTP after successful login
     user.otp = undefined;
     user.otpExpiry = undefined;
     await user.save();
