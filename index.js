@@ -26,6 +26,18 @@ let loggedInUserEmail = null;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Clean up expired OTPs every minute
+setInterval(async () => {
+  try {
+    const result = await User.updateMany(
+      { otpExpiry: { $lt: new Date() } },
+      { $unset: { otp: "", otpExpiry: "" } }
+    );
+    console.log("Cleaned up expired OTPs:", result);
+  } catch (err) {
+    console.error("Error cleaning expired OTPs:", err);
+  }
+}, 60 * 1000); // Run every minute
 
 
 
@@ -104,12 +116,17 @@ passport.use(
           });
         }
         setTimeout(async () => {
-          await User.updateOne(
-            { googleId: profile.id },
-            { $unset: { otp: "", otpExpiry: "" } }
-          );
-          console.log("OTP expired and deleted for user:", profile.emails[0].value);
+          try {
+            const result = await User.updateOne(
+              { googleId: profile.id },
+              { $unset: { otp: "", otpExpiry: "" } }
+            );
+            console.log("OTP expired and deleted for user:", profile.emails[0].value, result);
+          } catch (err) {
+            console.error("Error deleting OTP:", err);
+          }
         }, 60 * 1000); // 60 seconds
+        
         const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
           expiresIn: "1h",
         });
@@ -444,8 +461,8 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String },
   googleId: { type: String }, // Removed unique constraint,
-  otp: Number,
-  otpExpiry: Date, // Timestamp for OTP expiration
+  otp: { type: Number, required: false },
+  otpExpiry: { type: Date, required: false },
 });
 
 
