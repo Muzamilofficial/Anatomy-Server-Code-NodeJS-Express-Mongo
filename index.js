@@ -309,17 +309,17 @@ app.get("/login-success", (req, res) => {
 
 
 
+
+
 app.get(
   '/auth/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
     const { token, profile } = req.user;
 
-    // Construct a deep link with the token and email
-    const redirectUrl = `${req.query.redirectUrl}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(profile.email)}`;
-
-    // Redirect to the frontend app
-    res.redirect(redirectUrl);
+    // Redirect back to the app with token and email
+    const redirectURL = `bioscope://profile?token=${token}&email=${encodeURIComponent(profile.email)}`;
+    res.redirect(redirectURL);
   }
 );
 
