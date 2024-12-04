@@ -27,18 +27,17 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Clean up expired OTPs every minute
-setTimeout(async () => {
+setInterval(async () => {
   try {
-    const result = await User.updateOne(
-      { googleId: profile.id },
+    const result = await User.updateMany(
+      { otpExpiry: { $lt: new Date() } },
       { $unset: { otp: "", otpExpiry: "" } }
     );
-    console.log("OTP expired and deleted for user:", profile.emails[0].value, result);
+    console.log("Cleaned up expired OTPs:", result);
   } catch (err) {
-    console.error("Error deleting OTP:", err);
+    console.error("Error cleaning expired OTPs:", err);
   }
-}, 60 * 1000); // 60 seconds
-
+}, 60 * 1000); // Run every minute
 
 
 
