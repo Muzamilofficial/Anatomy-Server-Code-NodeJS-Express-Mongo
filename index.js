@@ -309,18 +309,20 @@ app.get("/login-success", (req, res) => {
 
 
 
+app.get(
+  '/auth/callback',
+  passport.authenticate('google', { failureRedirect: '/' }),
+  (req, res) => {
+    const { token, profile } = req.user;
 
+    // Construct a deep link with the token and email
+    const redirectUrl = `${req.query.redirectUrl}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(profile.email)}`;
 
-app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-  // Extract token and profile from the authenticated user
-  const { token, profile } = req.user;
+    // Redirect to the frontend app
+    res.redirect(redirectUrl);
+  }
+);
 
-  // Send the email and token as part of the response
-  res.send(`
-    <p><strong>Email:</strong> ${profile.email}</p>
-    <p><strong>Token:</strong> ${token}</p>
-  `);
-});
 
 
 // SMTP Configuration
