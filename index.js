@@ -127,7 +127,6 @@ app.use(passport.session());
 
 app.get("/auth/google", passport.authenticate("google", { scope: ["email", "profile"] }));
 
-
 // Login Success Page
 app.get("/login-success", (req, res) => {
   const email = req.query.email; // Retrieve email from the query string
@@ -313,17 +312,11 @@ app.get("/login-success", (req, res) => {
 
 
 app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-  const token = req.user.token;
-  const email = req.user.profile.emails[0].value;
+  const { token, profile } = req.user;
 
-  // Send the token and email to the React Native app via WebView
-  res.send(`
-    <script>
-      window.ReactNativeWebView.postMessage(JSON.stringify({ token: '${token}', email: '${email}' }));
-    </script>
-  `);
+  // After the login, you can redirect to a success page
+  res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}&token=${token}`);
 });
-
 
 // SMTP Configuration
 const transporter = nodemailer.createTransport({
