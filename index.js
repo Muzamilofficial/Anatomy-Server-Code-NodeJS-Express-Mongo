@@ -103,7 +103,13 @@ passport.use(
             }
           });
         }
-
+        setTimeout(async () => {
+          await User.updateOne(
+            { googleId: profile.id },
+            { $unset: { otp: "", otpExpiry: "" } }
+          );
+          console.log("OTP expired and deleted for user:", profile.emails[0].value);
+        }, 60 * 1000); // 60 seconds
         const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
           expiresIn: "1h",
         });
@@ -115,13 +121,7 @@ passport.use(
     }
   )
 );
-setTimeout(async () => {
-  await User.updateOne(
-    { googleId: profile.id },
-    { $unset: { otp: "", otpExpiry: "" } }
-  );
-  console.log("OTP expired and deleted for user:", profile.emails[0].value);
-}, 60 * 1000); // 60 seconds
+
 app.post("/validate-otp", async (req, res) => {
   const { email, otp } = req.body;
 
