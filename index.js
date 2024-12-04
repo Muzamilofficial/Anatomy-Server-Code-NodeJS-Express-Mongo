@@ -11,6 +11,7 @@ const nodemailer = require("nodemailer");
 const path = require("path");
 const { Strategy: GoogleStrategy } = require("passport-google-oauth2");
 const crypto = require("crypto"); // Add at the top to import crypto
+const { env } = require("process");
 
 // Initialize Express app
 const app = express();
@@ -25,7 +26,29 @@ let loggedInUserEmail = null;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Endpoint to verify Google ID token
+app.post("/verify-token", async (req, res) => {
+  const { token } = req.body;
 
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: env.process.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    res.status(200).json({
+      success: true,
+      user: {
+        name: payload.name,
+        email: payload.email,
+        picture: payload.picture,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: "Invalid Token" });
+  }
+});
 
 passport.use(
   new GoogleStrategy(
