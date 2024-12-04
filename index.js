@@ -1,3 +1,46 @@
+require("dotenv").config(); // Load environment variables
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const passport = require("passport");
+const session = require("express-session");
+const nodemailer = require("nodemailer");
+const path = require("path");
+const { Strategy: GoogleStrategy } = require("passport-google-oauth2");
+const crypto = require("crypto"); // Add at the top to import crypto
+
+// Initialize Express app
+const app = express();
+const PORT = process.env.PORT || 443;
+const IP_ADDRESS = process.env.IP_ADDRESS || "localhost";
+const JWT_SECRET = process.env.JWT_SECRET || "default_secret_key";
+const SESSION_SECRET = process.env.SESSION_SECRET || "default_session_secret_key";
+app.use("/assets", express.static(path.join(__dirname, "assets")));
+const generateOTP = () => Math.floor(10000 + Math.random() * 90000); // 5-digit OTP
+let loggedInUserEmail = null;
+
+// Middleware setup
+app.use(cors());
+app.use(bodyParser.json());
+
+// Clean up expired OTPs every minute
+setInterval(async () => {
+  try {
+    const result = await User.updateMany(
+      { otpExpiry: { $lt: new Date() } },
+      { $unset: { otp: "", otpExpiry: "" } }
+    );
+    console.log("Cleaned up expired OTPs:", result);
+  } catch (err) {
+    console.error("Error cleaning expired OTPs:", err);
+  }
+}, 60 * 1000); // Run every minute
+
+
+
 // Google OAuth strategy
 passport.use(new GoogleStrategy(
   {
@@ -90,22 +133,207 @@ app.post("/validate-otp", async (req, res) => {
   }
 });
 
-// Google login route
+
+// Passport session management
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user));
+
+app.use(session({ secret: SESSION_SECRET, resave: true, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.get("/auth/google", passport.authenticate("google", { scope: ["email", "profile"] }));
 
-// Google login callback
-app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-  const { token } = req.user;
-  res.redirect(`/login-success?email=${req.user.profile.emails[0].value}&token=${token}`);
+// Login Success Page
+app.get("/login-success", (req, res) => {
+  const email = req.query.email; // Retrieve email from the query string
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login Success</title>
+        <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            color: #fff;
+          }
+          #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-color: #000; /* Black background theme */
+          }
+          .container {
+            text-align: center;
+            background: rgba(30, 30, 30, 0.9); /* Semi-transparent dark container */
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 90%;
+            animation: fadeIn 1.2s ease-out;
+          }
+          .logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%; /* Circular logo */
+            margin-bottom: 20px;
+            border: 3px solid #fff; /* Optional: white border for logo */
+            object-fit: cover; /* Ensures the image fits within the circle */
+          }
+          h1 {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 20px;
+          }
+          p {
+            color: #aaa;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+          }
+          strong {
+            color: #fff;
+          }
+          .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            background-color: #1c3d5a;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(28, 61, 90, 0.4);
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+          }
+          .btn:hover {
+            background-color: #245b8a;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(36, 91, 138, 0.5);
+          }
+          .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+          }
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div id="particles-js"></div>
+        <div class="container">
+          <img src="/assets/images/logo.png" alt="App Logo" class="logo" />
+          <h1>Check Your Google Mail!</h1>
+          <p>An email has been sent to your Google account <strong>${email}</strong> with your login credentials.</p>
+          <p>Please check your inbox to continue. If you haven't received the email, kindly check your spam folder or try again later.</p>
+          
+
+          <a href="/" class="btn">Continue</a> <!-- Continue button that redirects to another page -->
+
+          <div class="footer">&copy; 2024 Anatomy. All rights reserved.</div>
+        </div>
+        <script>
+          // Particle.js configuration
+          particlesJS("particles-js", {
+            particles: {
+              number: { value: 100, density: { enable: true, value_area: 800 } },
+              color: { value: "#ffffff" }, /* White particles for contrast */
+              shape: {
+                type: "circle",
+                stroke: { width: 0, color: "#000000" },
+                polygon: { nb_sides: 5 }
+              },
+              opacity: {
+                value: 0.5,
+                random: false,
+                anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false }
+              },
+              size: {
+                value: 5,
+                random: true,
+                anim: { enable: false, speed: 40, size_min: 0.1, sync: false }
+              },
+              line_linked: {
+                enable: true,
+                distance: 150,
+                color: "#ffffff",
+                opacity: 0.4,
+                width: 1
+              },
+              move: {
+                enable: true,
+                speed: 6,
+                direction: "none",
+                random: false,
+                straight: false,
+                out_mode: "out",
+                bounce: false,
+                attract: { enable: false, rotateX: 600, rotateY: 1200 }
+              }
+            },
+            interactivity: {
+              detect_on: "canvas",
+              events: {
+                onhover: { enable: true, mode: "repulse" },
+                onclick: { enable: true, mode: "push" },
+                resize: true
+              },
+              modes: {
+                grab: { distance: 400, line_linked: { opacity: 1 } },
+                bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
+                repulse: { distance: 200, duration: 0.4 },
+                push: { particles_nb: 4 },
+                remove: { particles_nb: 2 }
+              }
+            },
+            retina_detect: true
+          });
+        </script>
+      </body>
+    </html>
+  `);
 });
 
-// Login success page
-app.get("/login-success", (req, res) => {
-  const { email } = req.query;
-  res.send(`
-    <h1>Welcome!</h1>
-    <p>An email has been sent to <strong>${email}</strong> with your OTP.</p>
-  `);
+
+
+
+
+
+
+app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
+  const { token, profile } = req.user;
+
+  // After the login, you can redirect to a success page
+  res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}&token=${token}`);
 });
 
 // SMTP Configuration
