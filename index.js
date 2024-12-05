@@ -62,17 +62,24 @@ passport.use(
         }
 
         // Clear OTP after 60 seconds
-        setTimeout(async () => {
-          try {
-            await User.updateOne(
-              { googleId: profile.id }, // Ensure the filter only matches the user
-              { $unset: { otp: 1, otpExpiry: 1 } } // $unset removes only specified fields
-            );
-            console.log(`OTP cleared for user with Google ID: ${profile.id}`);
-          } catch (err) {
-            console.error("Error clearing OTP:", err);
-          }
-        }, 60000);
+// Clear OTP after 60 seconds
+setTimeout(async () => {
+  try {
+    const result = await User.updateOne(
+      { googleId: profile.id }, // Match the correct user
+      { $unset: { otp: "", otpExpiry: "" } } // Clear OTP and expiry
+    );
+
+    if (result.matchedCount === 0) {
+      console.error(`No user found with googleId: ${profile.id}`);
+    } else {
+      console.log(`OTP cleared for user with googleId: ${profile.id}`);
+    }
+  } catch (error) {
+    console.error(`Error clearing OTP for googleId ${profile.id}:`, error);
+  }
+}, 60000); // 60 seconds
+
         
 
         // Send the OTP via email
