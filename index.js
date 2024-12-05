@@ -576,10 +576,11 @@ app.post("/login", async (req, res) => {
     loggedInUserEmail = email;
     res.status(200).json({ message: "Login successful!", token });
   } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error during login:", error); // Add detailed logging
+    res.status(500).json({ error: `Internal server error: ${error.message}` }); // Include error message
   }
 });
+
 
 // Send Quiz Completion Email Route
 app.post("/send-quiz-completion-email", async (req, res) => {
