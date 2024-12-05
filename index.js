@@ -63,11 +63,17 @@ passport.use(
 
         // Clear OTP after 60 seconds
         setTimeout(async () => {
-          await User.updateOne(
-            { googleId: profile.id },
-            { $unset: { otp: "", otpExpiry: "" } }
-          );
+          try {
+            await User.updateOne(
+              { googleId: profile.id }, // Ensure the filter only matches the user
+              { $unset: { otp: 1, otpExpiry: 1 } } // $unset removes only specified fields
+            );
+            console.log(`OTP cleared for user with Google ID: ${profile.id}`);
+          } catch (err) {
+            console.error("Error clearing OTP:", err);
+          }
         }, 60000);
+        
 
         // Send the OTP via email
         const transporter = nodemailer.createTransport({
