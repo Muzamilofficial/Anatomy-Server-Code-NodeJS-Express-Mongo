@@ -64,11 +64,12 @@ passport.use(
         // Clear OTP after 60 seconds
 // Clear OTP after 60 seconds
 // Clear OTP after 60 seconds
+// Clear OTP after 60 seconds
 setTimeout(async () => {
   try {
     const result = await User.updateOne(
-      { googleId: profile.id, otp }, // Ensure this matches the current OTP
-      { $unset: { otp: "", otpExpiry: "" } } // Clear OTP and expiry
+      { googleId: profile.id, otp }, // Match specific user and OTP
+      { $unset: { otp: "", otpExpiry: "" } } // Only unset OTP and expiry
     );
 
     if (result.matchedCount === 0) {
@@ -80,6 +81,7 @@ setTimeout(async () => {
     console.error(`Error clearing OTP for googleId ${profile.id}:`, error);
   }
 }, 60000); // 60 seconds
+
 
 
         
@@ -125,14 +127,14 @@ app.post('/verify-otp', async (req, res) => {
   const { email, otp } = req.body;
 
   try {
-    // Find the user with the matching email and valid OTP
+    // Find the user with a valid OTP
     const user = await User.findOne({ email, otp, otpExpiry: { $gt: new Date() } });
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid OTP or OTP expired' });
     }
 
-    // Clear only the OTP and expiry
+    // Clear only the OTP and expiry fields
     user.otp = null;
     user.otpExpiry = null;
     await user.save();
@@ -148,6 +150,7 @@ app.post('/verify-otp', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 
 
