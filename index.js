@@ -150,6 +150,7 @@ app.post('/verify-otp', async (req, res) => {
 
 
 
+
 // Passport session management
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
@@ -442,7 +443,10 @@ const userSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   googleId: String,
   otp: { type: Number, default: null },
-  otpExpiry: { type: Date, default: null },
+  otpExpiry: {
+    type: Date,
+    index: { expires: 0 }, // Automatically remove document when `otpExpiry` time is reached
+  },
 });
 
 const User = mongoose.model('User', userSchema);
