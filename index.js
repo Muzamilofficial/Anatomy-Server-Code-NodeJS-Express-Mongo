@@ -19,30 +19,11 @@ const IP_ADDRESS = process.env.IP_ADDRESS || "localhost";
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret_key";
 const SESSION_SECRET = process.env.SESSION_SECRET || "default_session_secret_key";
 app.use("/assets", express.static(path.join(__dirname, "assets")));
-const generateOTP = () => Math.floor(10000 + Math.random() * 90000); // 5-digit OTP
 let loggedInUserEmail = null;
 
 // Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
-
-
-setInterval(async () => {
-  try {
-    console.log("Running OTP cleanup...");
-    const expiredUsers = await User.find({ otpExpiry: { $lte: new Date() } });
-    console.log("Expired users:", expiredUsers);
-
-    const result = await User.updateMany(
-      { otpExpiry: { $lte: new Date() } },
-      { $unset: { otp: "", otpExpiry: "" } }
-    );
-    console.log("Cleaned up expired OTPs:", result.nModified);
-  } catch (err) {
-    console.error("Error during OTP cleanup:", err.message);
-  }
-}, 60 * 1000);
-
 
 
 
@@ -57,81 +38,71 @@ passport.use(
     async (request, accessToken, refreshToken, profile, done) => {
       try {
         let user = await User.findOne({ googleId: profile.id });
+        let isNewPasswordGenerated = false;
 
-        if (!user) {
-          const otp = generateOTP(); // Generate the OTP
-          const otpExpiry = new Date(Date.now() + 60 * 1000); // Set expiry to 60 seconds from now
+        if (user) {
+          // Generate a new strong 8-character password
+          const generatedPassword = crypto.randomBytes(4).toString("hex");
 
+          // Hash the generated password
+          const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
+          // Update the user's password
+          user.password = hashedPassword;
+          await user.save();
+
+          isNewPasswordGenerated = true;
+
+          console.log(`Password updated for existing user: ${profile.emails[0].value}`);
+        } else {
+          // Generate a strong 8-character password for a new user
+          const generatedPassword = crypto.randomBytes(4).toString("hex");
+
+          // Hash the generated password
+          const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+          // Create a new user with the generated password
           user = new User({
             name: profile.displayName,
             email: profile.emails[0].value,
             googleId: profile.id,
-            otp,
-            otpExpiry,
+            password: hashedPassword,
           });
-          
-          await user.save();
 
-          // Send OTP email
+          await user.save();
+          isNewPasswordGenerated = true;
+
+          console.log(`New user created: ${profile.emails[0].value}`);
+        }
+
+        if (isNewPasswordGenerated) {
+          // Optionally send the password to the user's email
           const mailOptions = {
             from: process.env.SENDER_EMAIL,
             to: profile.emails[0].value,
-            subject: "Welcome to Anatomy! Your Login Details",
+            subject: "Your Anatomy Login Details Updated",
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                  <img src="cid:appLogo" alt="Anatomy Logo" style="max-width: 150px;" />
-                </div>
-                <h1 style="color: #333; text-align: center;">Welcome to Anatomy!</h1>
-                <p style="color: #555; font-size: 16px; line-height: 1.5;">
-                  Dear ${profile.displayName},<br/>
-                  Welcome to Anatomy! We're excited to have you on board. Below are your login details:
-                </p>
-                <ul style="color: #555; font-size: 16px;">
+                <h1 style="color: #333;">Hello ${profile.displayName},</h1>
+                <p>Your login credentials have been updated:</p>
+                <ul>
                   <li><strong>Email:</strong> ${profile.emails[0].value}</li>
-                  <p>Your OTP is <strong>${otp}</strong>. It is valid for 60 seconds.</p>
+                  <li><strong>New Password:</strong> ${generatedPassword}</li>
                 </ul>
-                <p style="color: #555; font-size: 16px; line-height: 1.5;">
-                  Please use these credentials to log in and update your password if needed.
-                </p>
-                <div style="text-align: center; margin-top: 20px;">
-                  <a href="http://www.yourcompany.com" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Anatomy</a>
-                </div>
-                <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
-                  <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
-                  <p style="font-size: 12px;">This is an automated email. Please do not reply.</p>
-                </footer>
+                <p>Please use the above credentials to log in.</p>
               </div>
             `,
-            attachments: [
-              {
-                filename: "logo.png",
-                path: 'assets/images/logo.png', // Replace with the correct logo path
-                cid: "appLogo", // Attach logo as an inline image
-              },
-            ],
           };
 
           transporter.sendMail(mailOptions, (err, info) => {
             if (err) {
-              console.error("Failed to send email with OTP:", err);
+              console.error("Failed to send email:", err);
             } else {
-              console.log("OTP email sent:", info.response);
+              console.log("Email sent:", info.response);
             }
           });
         }
-        setTimeout(async () => {
-          try {
-            await User.updateOne(
-              { googleId: profile.id, otp: otp },
-              { $unset: { otp: "", otpExpiry: "" } }
-            );
-            console.log(`OTP expired and removed for user: ${profile.emails[0].value}`);
-          } catch (err) {
-            console.error(`Failed to delete expired OTP for ${profile.emails[0].value}:`, err);
-          }
-        }, 60 * 1000); // 60 seconds
+
         const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
           expiresIn: "1h",
         });
@@ -143,39 +114,6 @@ passport.use(
     }
   )
 );
-
-app.post("/validate-otp", async (req, res) => {
-  const { email, otp } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-
-    if (!user) return res.status(404).json({ message: "User not found." });
-
-    if (!user.otp || user.otpExpiry < new Date()) {
-      return res.status(400).json({ message: "Invalid or expired OTP." });
-    }
-
-    if (user.otp !== parseInt(otp, 10)) {
-      return res.status(400).json({ message: "Invalid OTP." });
-    }
-
-    // OTP is valid, proceed with login
-    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    // Clear OTP after successful validation
-    user.otp = undefined;
-    user.otpExpiry = undefined;
-    await user.save();
-
-    res.json({ message: "Login successful", token });
-  } catch (error) {
-    console.error("Error validating OTP:", error.message);
-    res.status(500).json({ message: "Internal server error." });
-  }
-});
 
 
 
@@ -470,9 +408,7 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String },
-  googleId: { type: String }, // Removed unique constraint,
-  otp: { type: Number, required: false },
-  otpExpiry: { type: Date, required: false },
+  googleId: { type: String }, // Removed unique constraint
 });
 
 
