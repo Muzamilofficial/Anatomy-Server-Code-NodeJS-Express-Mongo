@@ -27,19 +27,17 @@ app.use(cors());
 app.use(bodyParser.json());
 
 
-// // Clean up expired OTPs every minute
-// setInterval(async () => {
-//   try {
-//     // Ensure `otpExpiry` is stored as a valid date in the database
-//     const result = await User.updateMany(
-//       { otpExpiry: { $lte: new Date() } },
-//       { $unset: { otp: "", otpExpiry: "" } }
-//     );
-//     console.log("Cleaned up expired OTPs:", result.nModified);
-//   } catch (err) {
-//     console.error("Error during OTP cleanup:", err.message);
-//   }
-// }, 60 * 1000); // Run every 60 seconds
+setTimeout(async () => {
+  try {
+    await User.updateOne(
+      { googleId: profile.id, otp: otp },
+      { $unset: { otp: "", otpExpiry: "" } }
+    );
+    console.log(`OTP expired and removed for user: ${profile.emails[0].value}`);
+  } catch (err) {
+    console.error(`Failed to delete expired OTP for ${profile.emails[0].value}:`, err);
+  }
+}, 60 * 1000); // 60 seconds
 
 
 
@@ -469,8 +467,8 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String },
   googleId: { type: String }, // Removed unique constraint,
-  otp: Number,
-  otpExpiry: { type: Date, index: { expires: '60s' } },
+  otp: { type: Number, required: false },
+  otpExpiry: { type: Date, required: false },
 });
 
 
