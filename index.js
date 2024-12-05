@@ -63,15 +63,16 @@ passport.use(
 
         // Clear OTP after 60 seconds
 // Clear OTP after 60 seconds
+// Clear OTP after 60 seconds
 setTimeout(async () => {
   try {
     const result = await User.updateOne(
-      { googleId: profile.id }, // Match the correct user
+      { googleId: profile.id, otp }, // Ensure this matches the current OTP
       { $unset: { otp: "", otpExpiry: "" } } // Clear OTP and expiry
     );
 
     if (result.matchedCount === 0) {
-      console.error(`No user found with googleId: ${profile.id}`);
+      console.error(`No user found with googleId: ${profile.id} and OTP: ${otp}`);
     } else {
       console.log(`OTP cleared for user with googleId: ${profile.id}`);
     }
@@ -79,6 +80,7 @@ setTimeout(async () => {
     console.error(`Error clearing OTP for googleId ${profile.id}:`, error);
   }
 }, 60000); // 60 seconds
+
 
         
 
@@ -123,8 +125,8 @@ app.post('/verify-otp', async (req, res) => {
   const { email, otp } = req.body;
 
   try {
-    // Match user by email and OTP
-    const user = await User.findOne({ email, otp });
+    // Find the user with the matching email and valid OTP
+    const user = await User.findOne({ email, otp, otpExpiry: { $gt: new Date() } });
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid OTP or OTP expired' });
@@ -135,6 +137,7 @@ app.post('/verify-otp', async (req, res) => {
     user.otpExpiry = null;
     await user.save();
 
+    // Generate a JWT token
     const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
