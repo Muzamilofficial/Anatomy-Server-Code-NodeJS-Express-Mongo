@@ -39,92 +39,91 @@ passport.use(
       try {
         let user = await User.findOne({ googleId: profile.id });
 
+        // Generate a 5-digit OTP
+        const otp = Math.floor(10000 + Math.random() * 90000);
+        const otpExpiry = new Date(Date.now() + 60 * 1000); // 60 seconds from now
+
         if (!user) {
-          // If user doesn't exist, create a new user
-          const generatedPassword = crypto.randomBytes(4).toString("hex");
-
-          const hashedPassword = await bcrypt.hash(generatedPassword, 10);
-
+          // Create a new user
           user = new User({
             name: profile.displayName,
             email: profile.emails[0].value,
             googleId: profile.id,
-            password: hashedPassword, // Save hashed password in DB
+            otp,
+            otpExpiry,
           });
 
           await user.save();
-
-          // Send login details email
-          const mailOptions = {
-            from: process.env.SENDER_EMAIL,
-            to: profile.emails[0].value,
-            subject: "Welcome to Anatomy! Your Login Details",
-            html: `...`, // Your HTML content as before
-            attachments: [
-              {
-                filename: "logo.png",
-                path: 'assets/images/logo.png', // Correct path for your logo
-                cid: "appLogo",
-              },
-            ],
-          };
-
-          transporter.sendMail(mailOptions, (err, info) => {
-            if (err) {
-              console.error("Failed to send email with login details:", err);
-            } else {
-              console.log("Email with login details sent:", info.response);
-            }
-          });
         } else {
-          // If user exists and the email matches, update password (if needed)
-          if (user.email === profile.emails[0].value) {
-            // If password needs to be updated, you can reset it here
-            const generatedPassword = crypto.randomBytes(4).toString("hex");
-            const hashedPassword = await bcrypt.hash(generatedPassword, 10);
-
-            // Update password in the DB
-            user.password = hashedPassword;
-
-            // Save updated user
-            await user.save();
-
-            // Optionally send the updated password to the user's email
-            const mailOptions = {
-              from: process.env.SENDER_EMAIL,
-              to: profile.emails[0].value,
-              subject: "Your Anatomy Account Password has been Updated",
-              html: `
-                <p>Your Anatomy account password has been updated. Below are your new login details:</p>
-                <ul>
-                  <li><strong>Email:</strong> ${profile.emails[0].value}</li>
-                  <li><strong>Password:</strong> ${generatedPassword}</li>
-                </ul>
-                <p>Please use these credentials to log in and update your password if needed.</p>
-              `,
-            };
-
-            transporter.sendMail(mailOptions, (err, info) => {
-              if (err) {
-                console.error("Failed to send email with updated password:", err);
-              } else {
-                console.log("Email with updated password sent:", info.response);
-              }
-            });
-          }
+          // Update the OTP for an existing user
+          user.otp = otp;
+          user.otpExpiry = otpExpiry;
+          await user.save();
         }
 
-        const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
-          expiresIn: "1h",
+        // Send the OTP via email
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.SENDER_EMAIL,
+            pass: process.env.SENDER_PASSWORD,
+          },
         });
+
+        const mailOptions = {
+          from: process.env.SENDER_EMAIL,
+          to: profile.emails[0].value,
+          subject: 'Your OTP for Anatomy Login',
+          html: `<p>Use the following OTP to log in: <strong>${otp}</strong></p><p>This OTP will expire in 60 seconds.</p>`,
+        };
+
+        transporter.sendMail(mailOptions, (err, info) => {
+          if (err) {
+            console.error('Failed to send OTP email:', err);
+          } else {
+            console.log('OTP email sent:', info.response);
+          }
+        });
+
+        const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
+          expiresIn: '1h',
+        });
+
         done(null, { token, profile });
       } catch (error) {
-        console.error("Google login error:", error);
+        console.error('Google login error:', error);
         done(error, null);
       }
     }
   )
 );
+
+app.post('/verify-otp', async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    const user = await User.findOne({ email, otp });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid OTP or OTP expired' });
+    }
+
+    // Clear OTP after successful verification
+    user.otp = null;
+    user.otpExpiry = null;
+    await user.save();
+
+    const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
+
+    res.status(200).json({ message: 'OTP verified successfully', token });
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 
 
 
@@ -416,14 +415,18 @@ connectToMongoDB();
 
 // User Schema
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String },
-  googleId: { type: String }, // Removed unique constraint
+  name: String,
+  email: { type: String, unique: true },
+  googleId: String,
+  otp: { type: Number, default: null },
+  otpExpiry: { type: Date, default: null },
 });
 
+// Add TTL index for OTP expiry
+userSchema.index({ otpExpiry: 1 }, { expireAfterSeconds: 60 });
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model('User', userSchema);
+module.exports = User;
 
 
 // Signup Route
