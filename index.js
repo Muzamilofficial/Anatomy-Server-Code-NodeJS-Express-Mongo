@@ -116,13 +116,14 @@ app.post('/verify-otp', async (req, res) => {
   const { email, otp } = req.body;
 
   try {
+    // Match user by email and OTP
     const user = await User.findOne({ email, otp });
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid OTP or OTP expired' });
     }
 
-    // Clear OTP after successful verification
+    // Clear only the OTP and expiry
     user.otp = null;
     user.otpExpiry = null;
     await user.save();
@@ -137,6 +138,7 @@ app.post('/verify-otp', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 
 
