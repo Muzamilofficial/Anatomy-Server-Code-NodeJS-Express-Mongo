@@ -529,6 +529,8 @@ const userSchema = new mongoose.Schema({
   googleId: String,
   otp: { type: Number, default: null },
   otpExpiry: { type: Date, default: null },
+  
+  password: { type: String },
 });
 
 const User = mongoose.model("User", userSchema);
