@@ -26,17 +26,21 @@ let loggedInUserEmail = null;
 app.use(cors());
 app.use(bodyParser.json());
 
-setTimeout(async () => {
+
+// Clean up expired OTPs every minute
+setInterval(async () => {
   try {
-    await User.updateOne(
-      { googleId: profile.id },
+    // Ensure `otpExpiry` is stored as a valid date in the database
+    const result = await User.updateMany(
+      { otpExpiry: { $lte: new Date() } },
       { $unset: { otp: "", otpExpiry: "" } }
     );
-    console.log("OTP expired and deleted for user:", profile.emails[0].value);
+    console.log("Cleaned up expired OTPs:", result.nModified);
   } catch (err) {
-    console.error("Error deleting expired OTP:", err);
+    console.error("Error during OTP cleanup:", err.message);
   }
-}, 60 * 1000); // 60 seconds
+}, 60 * 1000); // Run every 60 seconds
+
 
 
 
@@ -53,8 +57,9 @@ passport.use(
         let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
-          const otp = generateOTP();
-          const otpExpiry = new Date(Date.now() + 60 * 1000); // 60 seconds from now
+          const otp = generateOTP(); // Generate the OTP
+          const otpExpiry = new Date(Date.now() + 60 * 1000); // Set expiry to 60 seconds from now
+
 
           user = new User({
             name: profile.displayName,
@@ -63,7 +68,7 @@ passport.use(
             otp,
             otpExpiry,
           });
-
+          
           await user.save();
 
           // Send OTP email
@@ -115,11 +120,15 @@ passport.use(
           });
         }
         setTimeout(async () => {
-          await User.updateOne(
-            { googleId: profile.id },
-            { $unset: { otp: "", otpExpiry: "" } }
-          );
-          console.log("OTP expired and deleted for user:", profile.emails[0].value);
+          try {
+            await User.updateOne(
+              { googleId: profile.id, otp: otp },
+              { $unset: { otp: "", otpExpiry: "" } }
+            );
+            console.log(`OTP expired and removed for user: ${profile.emails[0].value}`);
+          } catch (err) {
+            console.error(`Failed to delete expired OTP for ${profile.emails[0].value}:`, err);
+          }
         }, 60 * 1000); // 60 seconds
         const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
           expiresIn: "1h",
@@ -141,8 +150,12 @@ app.post("/validate-otp", async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found." });
 
-    if (user.otp !== parseInt(otp) || user.otpExpiry < Date.now()) {
+    if (!user.otp || user.otpExpiry < new Date()) {
       return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
+
+    if (user.otp !== parseInt(otp, 10)) {
+      return res.status(400).json({ message: "Invalid OTP." });
     }
 
     // OTP is valid, proceed with login
@@ -150,17 +163,18 @@ app.post("/validate-otp", async (req, res) => {
       expiresIn: "1h",
     });
 
-    // Clear OTP after successful login
+    // Clear OTP after successful validation
     user.otp = undefined;
     user.otpExpiry = undefined;
     await user.save();
 
     res.json({ message: "Login successful", token });
   } catch (error) {
-    console.error("OTP validation error:", error);
+    console.error("Error validating OTP:", error.message);
     res.status(500).json({ message: "Internal server error." });
   }
 });
+
 
 
 // Passport session management
@@ -456,7 +470,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String },
   googleId: { type: String }, // Removed unique constraint,
   otp: { type: Number, required: false },
-  otpExpiry: { type: Date, index: { expires: '60s' } }, // TTL Index
+  otpExpiry: { type: Date, required: false },
 });
 
 
