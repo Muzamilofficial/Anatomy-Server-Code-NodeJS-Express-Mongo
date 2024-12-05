@@ -61,6 +61,14 @@ passport.use(
           await user.save();
         }
 
+        // Clear OTP after 60 seconds
+        setTimeout(async () => {
+          await User.updateOne(
+            { googleId: profile.id },
+            { $unset: { otp: "", otpExpiry: "" } }
+          );
+        }, 60000);
+
         // Send the OTP via email
         const transporter = nodemailer.createTransport({
           service: 'gmail',
@@ -421,9 +429,6 @@ const userSchema = new mongoose.Schema({
   otp: { type: Number, default: null },
   otpExpiry: { type: Date, default: null },
 });
-
-// Add TTL index for OTP expiry
-userSchema.index({ otpExpiry: 1 }, { expireAfterSeconds: 60 });
 
 const User = mongoose.model('User', userSchema);
 
