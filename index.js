@@ -38,24 +38,8 @@ passport.use(
     async (request, accessToken, refreshToken, profile, done) => {
       try {
         let user = await User.findOne({ googleId: profile.id });
-        let isNewPasswordGenerated = false;
-
-        if (user) {
-          // Generate a new strong 8-character password
-          const generatedPassword = crypto.randomBytes(4).toString("hex");
-
-          // Hash the generated password
-          const hashedPassword = await bcrypt.hash(generatedPassword, 10);
-
-          // Update the user's password
-          user.password = hashedPassword;
-          await user.save();
-
-          isNewPasswordGenerated = true;
-
-          console.log(`Password updated for existing user: ${profile.emails[0].value}`);
-        } else {
-          // Generate a strong 8-character password for a new user
+        if (!user) {
+          // Generate a strong 8-character password
           const generatedPassword = crypto.randomBytes(4).toString("hex");
 
           // Hash the generated password
@@ -66,39 +50,56 @@ passport.use(
             name: profile.displayName,
             email: profile.emails[0].value,
             googleId: profile.id,
-            password: hashedPassword,
+            password: hashedPassword, // Save hashed password in DB
           });
 
           await user.save();
-          isNewPasswordGenerated = true;
 
-          console.log(`New user created: ${profile.emails[0].value}`);
-        }
-
-        if (isNewPasswordGenerated) {
           // Optionally send the password to the user's email
           const mailOptions = {
             from: process.env.SENDER_EMAIL,
             to: profile.emails[0].value,
-            subject: "Your Anatomy Login Details Updated",
+            subject: "Welcome to Anatomy! Your Login Details",
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
-                <h1 style="color: #333;">Hello ${profile.displayName},</h1>
-                <p>Your login credentials have been updated:</p>
-                <ul>
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <img src="cid:appLogo" alt="Anatomy Logo" style="max-width: 150px;" />
+                </div>
+                <h1 style="color: #333; text-align: center;">Welcome to Anatomy!</h1>
+                <p style="color: #555; font-size: 16px; line-height: 1.5;">
+                  Dear ${profile.displayName},<br/>
+                  Welcome to Anatomy! We're excited to have you on board. Below are your login details:
+                </p>
+                <ul style="color: #555; font-size: 16px;">
                   <li><strong>Email:</strong> ${profile.emails[0].value}</li>
-                  <li><strong>New Password:</strong> ${generatedPassword}</li>
+                  <li><strong>Password:</strong> ${generatedPassword}</li>
                 </ul>
-                <p>Please use the above credentials to log in.</p>
+                <p style="color: #555; font-size: 16px; line-height: 1.5;">
+                  Please use these credentials to log in and update your password if needed.
+                </p>
+                <div style="text-align: center; margin-top: 20px;">
+                  <a href="http://www.yourcompany.com" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Anatomy</a>
+                </div>
+                <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
+                  <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
+                  <p style="font-size: 12px;">This is an automated email. Please do not reply.</p>
+                </footer>
               </div>
             `,
+            attachments: [
+              {
+                filename: "logo.png",
+                path: 'assets/images/logo.png', // Replace with the correct logo path
+                cid: "appLogo", // Attach logo as an inline image
+              },
+            ],
           };
 
           transporter.sendMail(mailOptions, (err, info) => {
             if (err) {
-              console.error("Failed to send email:", err);
+              console.error("Failed to send email with login details:", err);
             } else {
-              console.log("Email sent:", info.response);
+              console.log("Email with login details sent:", info.response);
             }
           });
         }
@@ -114,7 +115,6 @@ passport.use(
     }
   )
 );
-
 
 
 // Passport session management
