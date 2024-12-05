@@ -119,32 +119,32 @@ setTimeout(async () => {
   )
 );
 
-// app.post('/verify-otp', async (req, res) => {
-//   const { email, otp } = req.body;
+app.post('/verify-otp', async (req, res) => {
+  const { email, otp } = req.body;
 
-//   try {
-//     // Match user by email and OTP
-//     const user = await User.findOne({ email, otp });
+  try {
+    // Match user by email and OTP
+    const user = await User.findOne({ email, otp });
 
-//     if (!user) {
-//       return res.status(400).json({ message: 'Invalid OTP or OTP expired' });
-//     }
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid OTP or OTP expired' });
+    }
 
-//     // Clear only the OTP and expiry
-//     user.otp = null;
-//     user.otpExpiry = null;
-//     await user.save();
+    // Clear only the OTP and expiry
+    user.otp = null;
+    user.otpExpiry = null;
+    await user.save();
 
-//     const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
-//       expiresIn: '1h',
-//     });
+    const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
 
-//     res.status(200).json({ message: 'OTP verified successfully', token });
-//   } catch (error) {
-//     console.error('Error verifying OTP:', error);
-//     res.status(500).json({ message: 'Internal server error' });
-//   }
-// });
+    res.status(200).json({ message: 'OTP verified successfully', token });
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 
 
@@ -152,34 +152,6 @@ setTimeout(async () => {
 
 
 // Passport session management
-
-const checkAndClearExpiredOtps = async () => {
-  try {
-    // Find all users with expired OTPs
-    const now = new Date();
-    const expiredUsers = await User.find({ otpExpiry: { $lt: now } });
-
-    if (expiredUsers.length > 0) {
-      for (const user of expiredUsers) {
-        // Clear the OTP and expiry fields
-        user.otp = null;
-        user.otpExpiry = null;
-        await user.save();
-        console.log(`Cleared OTP for user: ${user.email}`);
-      }
-    }
-  } catch (error) {
-    console.error('Error clearing expired OTPs:', error);
-  }
-};
-
-// Run every minute
-setInterval(checkAndClearExpiredOtps, 60 * 1000);
-
-
-
-
-
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
