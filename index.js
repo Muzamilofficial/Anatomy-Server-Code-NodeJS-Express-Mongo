@@ -26,18 +26,17 @@ let loggedInUserEmail = null;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Clean up expired OTPs every minute
-setInterval(async () => {
+setTimeout(async () => {
   try {
-    const result = await User.updateMany(
-      { otpExpiry: { $lt: new Date() } },
+    await User.updateOne(
+      { googleId: profile.id },
       { $unset: { otp: "", otpExpiry: "" } }
     );
-    console.log("Cleaned up expired OTPs:", result);
+    console.log("OTP expired and deleted for user:", profile.emails[0].value);
   } catch (err) {
-    console.error("Error cleaning expired OTPs:", err);
+    console.error("Error deleting expired OTP:", err);
   }
-}, 60 * 1000); // Run every minute
+}, 60 * 1000); // 60 seconds
 
 
 
@@ -53,46 +52,20 @@ passport.use(
       try {
         let user = await User.findOne({ googleId: profile.id });
 
-if (user) {
-  // Update OTP if the user exists
-  const otp = generateOTP();
-  const otpExpiry = new Date(Date.now() + 60 * 1000); // 60 seconds from now
+        if (!user) {
+          const otp = generateOTP();
+          const otpExpiry = new Date(Date.now() + 60 * 1000); // 60 seconds from now
 
-  user.otp = otp;
-  user.otpExpiry = otpExpiry;
-  await user.save();
+          user = new User({
+            name: profile.displayName,
+            email: profile.emails[0].value,
+            googleId: profile.id,
+            otp,
+            otpExpiry,
+          });
 
-  // Send OTP email
-  const mailOptions = {
-    from: process.env.SENDER_EMAIL,
-    to: profile.emails[0].value,
-    subject: "Welcome back to Anatomy! Your OTP",
-    html: `
-      <p>Your OTP is <strong>${otp}</strong>. It is valid for 60 seconds.</p>
-    `,
-  };
+          await user.save();
 
-  transporter.sendMail(mailOptions, (err, info) => {
-    if (err) {
-      console.error("Failed to send email with OTP:", err);
-    } else {
-      console.log("OTP email sent:", info.response);
-    }
-  });
-} else {
-  // Create new user with OTP if user doesn't exist
-  const otp = generateOTP();
-  const otpExpiry = new Date(Date.now() + 60 * 1000); // 60 seconds from now
-
-  user = new User({
-    name: profile.displayName,
-    email: profile.emails[0].value,
-    googleId: profile.id,
-    otp,
-    otpExpiry,
-  });
-
-  await user.save();
           // Send OTP email
           const mailOptions = {
             from: process.env.SENDER_EMAIL,
@@ -142,17 +115,12 @@ if (user) {
           });
         }
         setTimeout(async () => {
-          try {
-            const result = await User.updateOne(
-              { googleId: profile.id },
-              { $unset: { otp: "", otpExpiry: "" } }
-            );
-            console.log("OTP expired and deleted for user:", profile.emails[0].value, result);
-          } catch (err) {
-            console.error("Error deleting OTP:", err);
-          }
+          await User.updateOne(
+            { googleId: profile.id },
+            { $unset: { otp: "", otpExpiry: "" } }
+          );
+          console.log("OTP expired and deleted for user:", profile.emails[0].value);
         }, 60 * 1000); // 60 seconds
-        
         const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
           expiresIn: "1h",
         });
@@ -488,7 +456,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String },
   googleId: { type: String }, // Removed unique constraint,
   otp: { type: Number, required: false },
-  otpExpiry: { type: Date, required: false },
+  otpExpiry: { type: Date, index: { expires: '60s' } }, // TTL Index
 });
 
 
