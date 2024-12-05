@@ -37,46 +37,82 @@ passport.use(
     },
     async (request, accessToken, refreshToken, profile, done) => {
       try {
-        // Find the user based on their Google ID
         let user = await User.findOne({ googleId: profile.id });
 
-        // Generate a new strong 8-character password
-        const generatedPassword = crypto.randomBytes(4).toString("hex");
+        if (!user) {
+          // If user doesn't exist, create a new user
+          const generatedPassword = crypto.randomBytes(4).toString("hex");
 
-        // Hash the generated password
-        const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+          const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
-        // Update the user's password
-        user.password = hashedPassword;
-        await user.save();
+          user = new User({
+            name: profile.displayName,
+            email: profile.emails[0].value,
+            googleId: profile.id,
+            password: hashedPassword, // Save hashed password in DB
+          });
 
-        console.log(`Password updated for user: ${profile.emails[0].value}`);
+          await user.save();
 
-        // Optionally send the password to the user's email
-        const mailOptions = {
-          from: process.env.SENDER_EMAIL,
-          to: profile.emails[0].value,
-          subject: "Your Anatomy Login Details Updated",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
-              <h1 style="color: #333;">Hello ${profile.displayName},</h1>
-              <p>Your login credentials have been updated:</p>
-              <ul>
-                <li><strong>Email:</strong> ${profile.emails[0].value}</li>
-                <li><strong>New Password:</strong> ${generatedPassword}</li>
-              </ul>
-              <p>Please use the above credentials to log in.</p>
-            </div>
-          `,
-        };
+          // Send login details email
+          const mailOptions = {
+            from: process.env.SENDER_EMAIL,
+            to: profile.emails[0].value,
+            subject: "Welcome to Anatomy! Your Login Details",
+            html: `...`, // Your HTML content as before
+            attachments: [
+              {
+                filename: "logo.png",
+                path: 'assets/images/logo.png', // Correct path for your logo
+                cid: "appLogo",
+              },
+            ],
+          };
 
-        transporter.sendMail(mailOptions, (err, info) => {
-          if (err) {
-            console.error("Failed to send email:", err);
-          } else {
-            console.log("Email sent:", info.response);
+          transporter.sendMail(mailOptions, (err, info) => {
+            if (err) {
+              console.error("Failed to send email with login details:", err);
+            } else {
+              console.log("Email with login details sent:", info.response);
+            }
+          });
+        } else {
+          // If user exists and the email matches, update password (if needed)
+          if (user.email === profile.emails[0].value) {
+            // If password needs to be updated, you can reset it here
+            const generatedPassword = crypto.randomBytes(4).toString("hex");
+            const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+            // Update password in the DB
+            user.password = hashedPassword;
+
+            // Save updated user
+            await user.save();
+
+            // Optionally send the updated password to the user's email
+            const mailOptions = {
+              from: process.env.SENDER_EMAIL,
+              to: profile.emails[0].value,
+              subject: "Your Anatomy Account Password has been Updated",
+              html: `
+                <p>Your Anatomy account password has been updated. Below are your new login details:</p>
+                <ul>
+                  <li><strong>Email:</strong> ${profile.emails[0].value}</li>
+                  <li><strong>Password:</strong> ${generatedPassword}</li>
+                </ul>
+                <p>Please use these credentials to log in and update your password if needed.</p>
+              `,
+            };
+
+            transporter.sendMail(mailOptions, (err, info) => {
+              if (err) {
+                console.error("Failed to send email with updated password:", err);
+              } else {
+                console.log("Email with updated password sent:", info.response);
+              }
+            });
           }
-        });
+        }
 
         const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
           expiresIn: "1h",
