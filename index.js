@@ -426,8 +426,6 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ otpExpiry: 1 }, { expireAfterSeconds: 60 });
 
 const User = mongoose.model('User', userSchema);
-module.exports = User;
-
 
 // Signup Route
 app.post("/signup", async (req, res) => {
