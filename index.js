@@ -27,103 +27,6 @@ app.use(bodyParser.json());
 
 
 
-// SMTP Configuration
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.SENDER_EMAIL,
-    pass: process.env.SENDER_PASSWORD,
-  },
-});
-
-// Test SMTP connection
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("SMTP connection failed:", error);
-  } else {
-    console.log("SMTP is connected successfully!");
-    // Send an email when the server starts
-    const logoPath = path.join(__dirname, "assets/images/logo.png");
-    const mailOptions = {
-      from: process.env.SENDER_EMAIL,
-      to: process.env.RECIPIENT_EMAIL,
-      subject: "Anatomy Server Started Successfully!",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <img src="cid:appLogo" alt="Anatomy Logo" style="max-width: 150px;" />
-          </div>
-          <h1 style="color: #333; text-align: center;">Anatomy Server Started Successfully!</h1>
-          <p style="color: #555; font-size: 16px; line-height: 1.5;">
-            Great news! Your Anatomy server has started successfully and is ready to serve your users.
-          </p>
-          <p style="color: #555; font-size: 16px; line-height: 1.5;">
-            Server Details:
-            <ul>
-              <li><strong>IP Address:</strong> ${IP_ADDRESS}</li>
-              <li><strong>Port:</strong> ${PORT}</li>
-            </ul>
-          </p>
-          <div style="text-align: center; margin-top: 20px;">
-            <a href="http://${IP_ADDRESS}:${PORT}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Server</a>
-          </div>
-          <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
-            <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
-            <p style="font-size: 12px;">This is an automated email. Please do not reply.</p>
-          </footer>
-        </div>
-      `,
-      attachments: [
-        {
-          filename: "logo.png",
-          path: logoPath,
-          cid: "appLogo",
-        },
-      ],
-    };
-
-    transporter.sendMail(mailOptions, (err, info) => {
-      if (err) {
-        console.error("Failed to send startup email:", err);
-      } else {
-        console.log("Startup email sent:", info.response);
-      }
-    });
-  }
-});
-
-// Middleware setup
-app.use(cors());
-app.use(bodyParser.json());
-app.use(passport.initialize());
-
-// MongoDB Connection
-const connectToMongoDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("Connected to MongoDB");
-  } catch (error) {
-    console.error("Error connecting to MongoDB:", error);
-  }
-};
-connectToMongoDB();
-
-// User Schema
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String },
-  googleId: { type: String }, // Removed unique constraint
-});
-
-
-
-const User = mongoose.model("User", userSchema);
-
-
 passport.use(
   new GoogleStrategy(
     {
@@ -416,8 +319,100 @@ app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/"
   res.redirect(`/login-success?email=${encodeURIComponent(profile.emails[0].value)}&token=${token}`);
 });
 
+// SMTP Configuration
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.SENDER_EMAIL,
+    pass: process.env.SENDER_PASSWORD,
+  },
+});
+
+// Test SMTP connection
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("SMTP connection failed:", error);
+  } else {
+    console.log("SMTP is connected successfully!");
+    // Send an email when the server starts
+    const logoPath = path.join(__dirname, "assets/images/logo.png");
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      to: process.env.RECIPIENT_EMAIL,
+      subject: "Anatomy Server Started Successfully!",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="cid:appLogo" alt="Anatomy Logo" style="max-width: 150px;" />
+          </div>
+          <h1 style="color: #333; text-align: center;">Anatomy Server Started Successfully!</h1>
+          <p style="color: #555; font-size: 16px; line-height: 1.5;">
+            Great news! Your Anatomy server has started successfully and is ready to serve your users.
+          </p>
+          <p style="color: #555; font-size: 16px; line-height: 1.5;">
+            Server Details:
+            <ul>
+              <li><strong>IP Address:</strong> ${IP_ADDRESS}</li>
+              <li><strong>Port:</strong> ${PORT}</li>
+            </ul>
+          </p>
+          <div style="text-align: center; margin-top: 20px;">
+            <a href="http://${IP_ADDRESS}:${PORT}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Server</a>
+          </div>
+          <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
+            <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
+            <p style="font-size: 12px;">This is an automated email. Please do not reply.</p>
+          </footer>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: "logo.png",
+          path: logoPath,
+          cid: "appLogo",
+        },
+      ],
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) {
+        console.error("Failed to send startup email:", err);
+      } else {
+        console.log("Startup email sent:", info.response);
+      }
+    });
+  }
+});
+
+// Middleware setup
+app.use(cors());
+app.use(bodyParser.json());
+app.use(passport.initialize());
+
+// MongoDB Connection
+const connectToMongoDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log("Connected to MongoDB");
+  } catch (error) {
+    console.error("Error connecting to MongoDB:", error);
+  }
+};
+connectToMongoDB();
+
+// User Schema
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String },
+  googleId: { type: String }, // Removed unique constraint
+});
 
 
+const User = mongoose.model("User", userSchema);
 
 
 // Signup Route
@@ -444,11 +439,6 @@ app.post("/signup", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
-
-
-
-
 
 // Login Route
 app.post("/login", async (req, res) => {
