@@ -62,25 +62,23 @@ passport.use(
         }
 
         // Clear OTP after 60 seconds
-// Clear OTP after 60 seconds
-// Clear OTP after 60 seconds
-// Clear OTP after 60 seconds
-setTimeout(async () => {
-  try {
-    const result = await User.updateOne(
-      { googleId: profile.id, otp }, // Match specific user and OTP
-      { $unset: { otp: "", otpExpiry: "" } } // Only unset OTP and expiry
-    );
-
-    if (result.matchedCount === 0) {
-      console.error(`No user found with googleId: ${profile.id} and OTP: ${otp}`);
-    } else {
-      console.log(`OTP cleared for user with googleId: ${profile.id}`);
-    }
-  } catch (error) {
-    console.error(`Error clearing OTP for googleId ${profile.id}:`, error);
-  }
-}, 60000); // 60 seconds
+        setTimeout(async () => {
+          try {
+            const result = await User.updateOne(
+              { googleId: profile.id, otp }, // Ensure this matches the current OTP
+              { $unset: { otp: "", otpExpiry: "" } } // Clear only OTP and expiry fields
+            );
+        
+            if (result.matchedCount === 0) {
+              console.error(`No user found with googleId: ${profile.id} and OTP: ${otp}`);
+            } else {
+              console.log(`OTP cleared for user with googleId: ${profile.id}`);
+            }
+          } catch (error) {
+            console.error(`Error clearing OTP for googleId ${profile.id}:`, error);
+          }
+        }, 60000); // 60 seconds
+        
 
 
 
@@ -449,13 +447,10 @@ const userSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   googleId: String,
   otp: { type: Number, default: null },
-  otpExpiry: {
-    type: Date,
-    index: { expires: 0 }, // Automatically remove document when `otpExpiry` time is reached
-  },
+  otpExpiry: { type: Date, default: null },
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
 // Signup Route
 app.post("/signup", async (req, res) => {
