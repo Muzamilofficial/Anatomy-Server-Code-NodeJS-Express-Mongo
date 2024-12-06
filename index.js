@@ -158,13 +158,12 @@ passport.use(
               <ul style="color: #555; font-size: 16px;">
                 <li><strong>Email:</strong> ${profile.emails[0].value}</li>
                 <li><strong>OTP:</strong> ${otp}</li>
-                <p>This OTP will expire in 60 seconds.</p>
               </ul>
               <p style="color: #555; font-size: 16px; line-height: 1.5;">
                 Please use these credentials to log in and update your password if needed.
               </p>
               <div style="text-align: center; margin-top: 20px;">
-                <a href="http://www.yourcompany.com" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Anatomy</a>
+                <a href="https://anatomy-two.vercel.app" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Anatomy</a>
               </div>
               <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
                 <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
@@ -355,11 +354,11 @@ app.get("/login-success", (req, res) => {
         <div class="container">
           <img src="/assets/images/logo.png" alt="App Logo" class="logo" />
           <h1>Check Your Google Mail!</h1>
-          <p>An email has been sent to your Google account <strong>${email}</strong> with your login credentials.</p>
+          <p>An OTP has been sent to your Google account <strong>${email}</strong>.</p>
           <p>Please check your inbox to continue. If you haven't received the email, kindly check your spam folder or try again later.</p>
           
 
-          <a href="/" class="btn">Continue</a> <!-- Continue button that redirects to another page -->
+          <!--  <a href="/" class="btn">Continue</a>  --> <!-- Continue button that redirects to another page -->
 
           <div class="footer">&copy; 2024 Anatomy. All rights reserved.</div>
         </div>
