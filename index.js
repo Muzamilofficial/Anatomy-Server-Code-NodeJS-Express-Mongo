@@ -535,6 +535,36 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
+
+app.post("/verify", async (req, res) => {
+  const { otp } = req.body;
+
+  if (!otp) {
+    return res.status(400).json({ error: "OTP is required" });
+  }
+
+  try {
+    const user = await User.findOne({ otp });
+
+    if (!user) {
+      return res.status(404).json({ error: "Invalid OTP" });
+    }
+
+    const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: "1h" });
+
+    // Clear OTP after successful verification
+    user.otp = null;
+    user.otpExpiry = null;
+    await user.save();
+
+    res.status(200).json({ token, email: user.email });
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 // Signup Route
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
