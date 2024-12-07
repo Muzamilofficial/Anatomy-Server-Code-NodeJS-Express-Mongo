@@ -964,7 +964,44 @@ app.get("/", (req, res) => {
   `);
 });
 
+// Define the Quiz schema
+const quizSchema = new mongoose.Schema({
+  email: { type: String, required: true },
+  BasicQuiz: { type: Boolean, default: false },
+  AdvanceQuiz: { type: Boolean, default: null },
+  BasicQuizMarks: { type: Number, default: null },
+  AdvanceQuizMarks: { type: Number, default: null },
+});
 
+const Quiz = mongoose.model("Quiz", quizSchema);
+
+// Route to save quiz data
+app.post("/save-basic-quiz", async (req, res) => {
+  const { email, score } = req.body;
+
+  try {
+    let quizEntry = await Quiz.findOne({ email });
+
+    if (quizEntry) {
+      // Update existing entry
+      quizEntry.BasicQuiz = true;
+      quizEntry.BasicQuizMarks = score;
+    } else {
+      // Create new entry
+      quizEntry = new Quiz({
+        email,
+        BasicQuiz: true,
+        BasicQuizMarks: score,
+      });
+    }
+
+    await quizEntry.save();
+    res.status(200).json({ message: "Quiz data saved successfully!" });
+  } catch (error) {
+    console.error("Error saving quiz data:", error);
+    res.status(500).json({ message: "Error saving quiz data" });
+  }
+});
 
 
 // Start the server
