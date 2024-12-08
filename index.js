@@ -615,17 +615,14 @@ app.post("/login", async (req, res) => {
 
 // Send Quiz Completion Email Route
 app.post("/send-quiz-completion-email", async (req, res) => {
-  if (!loggedInUserEmail) {
-    return res.status(401).json({ error: "No logged-in user to send the email to." });
+  const { email, score, incorrectLinks } = req.body;
+
+  // Validate input data
+  if (!email || !score || !Array.isArray(incorrectLinks)) {
+    return res.status(400).json({ error: "Invalid data format. Ensure email, score, and incorrectLinks are provided." });
   }
 
   const logoPath = path.join(__dirname, "assets/images/logo.png");
-  const { score, incorrectLinks } = req.body;
-
-  // Ensure score and links are being passed correctly
-  if (score === undefined || !Array.isArray(incorrectLinks)) {
-    return res.status(400).json({ error: "Invalid data format." });
-  }
 
   // Build the incorrect answers HTML list
   const incorrectAnswersList = incorrectLinks
@@ -638,7 +635,7 @@ app.post("/send-quiz-completion-email", async (req, res) => {
   // Create the email content
   const mailOptions = {
     from: process.env.SENDER_EMAIL,
-    to: loggedInUserEmail, // Use the logged-in user's email
+    to: email, // Use the email from the request body
     subject: "Quiz Completed!",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
