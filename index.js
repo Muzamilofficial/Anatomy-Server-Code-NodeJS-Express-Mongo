@@ -957,11 +957,15 @@ app.post('/fetchquizscores', async (req, res) => {
   try {
     const quizData = await Quiz.findOne({ email });
     if (!quizData) {
-      return res.status(404).json({ message: 'No data found for this user' });
+      // Default values for non-existent users
+      return res.json({
+        BasicQuizMarks: 0, // Default to 0 for BasicQuiz
+        AdvanceQuizMarks: '--', // Default to "--" for AdvanceQuiz
+      });
     }
     res.json({
-      BasicQuizMarks: quizData.BasicQuizMarks,
-      AdvanceQuizMarks: quizData.AdvanceQuizMarks,
+      BasicQuizMarks: quizData.BasicQuizMarks !== null ? quizData.BasicQuizMarks : 0, // Default to 0 if null
+      AdvanceQuizMarks: quizData.AdvanceQuizMarks !== null ? quizData.AdvanceQuizMarks : '--', // Default to "--" if null
     });
   } catch (error) {
     console.error(error);
