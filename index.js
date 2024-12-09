@@ -952,6 +952,31 @@ app.post("/save-basic-quiz", async (req, res) => {
 });
 
 
+// Route to fetch quiz scores by email
+router.get('/get-scores', async (req, res) => {
+  const { email } = req.query; // Email from query parameters
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const userQuiz = await Quiz.findOne({ email });
+    if (!userQuiz) {
+      return res.status(404).json({ message: 'No quiz data found for this email' });
+    }
+
+    res.json({
+      BasicQuizMarks: userQuiz.BasicQuizMarks,
+      AdvanceQuizMarks: userQuiz.AdvanceQuizMarks,
+    });
+  } catch (error) {
+    console.error('Error fetching quiz scores:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running at http://${IP_ADDRESS}:${PORT}`);
