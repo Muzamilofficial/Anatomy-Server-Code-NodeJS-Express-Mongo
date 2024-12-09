@@ -59,80 +59,9 @@ passport.use(
           user.otp = otp;
           user.otpExpiry = otpExpiry;
           await user.save();
-
-          const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-              user: process.env.SENDER_EMAIL,
-              pass: process.env.SENDER_PASSWORD,
-            },
-          });
-  
-          const mailOptions = {
-            from: process.env.SENDER_EMAIL,
-            to: profile.emails[0].value,
-            subject: "Welcome to Anatomy! Your Login Details",
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                  <img src="cid:appLogo" alt="Anatomy Logo" style="max-width: 150px;" />
-                </div>
-                <h1 style="color: #333; text-align: center;">Welcome to Anatomy!</h1>
-                <p style="color: #555; font-size: 16px; line-height: 1.5;">
-                  Dear ${profile.displayName},<br/>
-                  Welcome to Anatomy! We're excited to have you on board. Below are your login details:
-                </p>
-                <ul style="color: #555; font-size: 16px;">
-                  <li><strong>Email:</strong> ${profile.emails[0].value}</li>
-                  <li><strong>OTP:</strong> ${otp}</li>
-                  <p>This OTP will expire in 60 seconds.</p>
-                </ul>
-                <p style="color: #555; font-size: 16px; line-height: 1.5;">
-                  Please use these credentials to log in and update your password if needed.
-                </p>
-                <div style="text-align: center; margin-top: 20px;">
-                  <a href="http://www.yourcompany.com" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Anatomy</a>
-                </div>
-                <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
-                  <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
-                  <p style="font-size: 12px;">This is an automated email. Please do not reply.</p>
-                </footer>
-              </div>
-            `,
-            attachments: [
-              {
-                filename: "logo.png",
-                path: 'assets/images/logo.png', // Replace with the correct logo path
-                cid: "appLogo", // Attach logo as an inline image
-              },
-            ],
-          };
         }
 
-        // Clear OTP after 60 seconds
-        setTimeout(async () => {
-          try {
-            const result = await User.updateOne(
-              { googleId: profile.id, otp }, // Ensure this matches the current OTP
-              { $unset: { otp: "", otpExpiry: "" } } // Clear only OTP and expiry fields
-            );
-        
-            if (result.matchedCount === 0) {
-              console.error(`No user found with googleId: ${profile.id} and OTP: ${otp}`);
-            } else {
-              console.log(`OTP cleared for user with googleId: ${profile.id}`);
-            }
-          } catch (error) {
-            console.error(`Error clearing OTP for googleId ${profile.id}:`, error);
-          }
-        }, 60000); // 60 seconds
-        
-
-
-
-        
-
-        // Send the OTP via email
+        // Send the OTP email
         const transporter = nodemailer.createTransport({
           service: 'gmail',
           auth: {
@@ -159,6 +88,9 @@ passport.use(
                 <li><strong>Email:</strong> ${profile.emails[0].value}</li>
                 <li><strong>OTP:</strong> ${otp}</li>
               </ul>
+              <p style="color: #555; font-size: 16px; line-height: 1.5;">
+                This OTP will expire in 60 seconds.
+              </p>
               <p style="color: #555; font-size: 16px; line-height: 1.5;">
                 Please use these credentials to log in and update your password if needed.
               </p>
@@ -188,6 +120,24 @@ passport.use(
           }
         });
 
+        // Clear OTP after 60 seconds
+        setTimeout(async () => {
+          try {
+            const result = await User.updateOne(
+              { googleId: profile.id, otp }, // Ensure this matches the current OTP
+              { $unset: { otp: "", otpExpiry: "" } } // Clear only OTP and expiry fields
+            );
+        
+            if (result.matchedCount === 0) {
+              console.error(`No user found with googleId: ${profile.id} and OTP: ${otp}`);
+            } else {
+              console.log(`OTP cleared for user with googleId: ${profile.id}`);
+            }
+          } catch (error) {
+            console.error(`Error clearing OTP for googleId ${profile.id}:`, error);
+          }
+        }, 60000); // 60 seconds
+
         const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
           expiresIn: '1h',
         });
@@ -200,6 +150,7 @@ passport.use(
     }
   )
 );
+
 
 app.post('/verify-otp', async (req, res) => {
   const { email, otp } = req.body;
