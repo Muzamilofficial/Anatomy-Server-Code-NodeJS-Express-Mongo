@@ -951,6 +951,23 @@ app.post("/save-basic-quiz", async (req, res) => {
   }
 });
 
+// API Endpoint to get user quiz scores
+app.post('/fetchquizscores', async (req, res) => {
+  const { email } = req.body;
+  try {
+    const quizData = await Quiz.findOne({ email });
+    if (!quizData) {
+      return res.status(404).json({ message: 'No data found for this user' });
+    }
+    res.json({
+      BasicQuizMarks: quizData.BasicQuizMarks,
+      AdvanceQuizMarks: quizData.AdvanceQuizMarks,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 
 
