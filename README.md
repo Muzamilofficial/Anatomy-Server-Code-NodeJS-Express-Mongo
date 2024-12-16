@@ -36,3 +36,20 @@
 
 #NodeJS #ExpressJS #MongoDB #BackendDevelopment #MachineLearning #DeepLearning #EducationInnovation
 
+# 📸 Some Screenshots of the Project 🖼️✨
+![image](https://github.com/user-attachments/assets/59646bd8-311a-409f-8cc1-56baaa228273)
+![image](https://github.com/user-attachments/assets/c6005a28-1c45-451e-9aaf-6eb1b373a77f)
+![image](https://github.com/user-attachments/assets/0c5f2e3c-c375-4bf6-b72c-cf0456445902)
+![image](https://github.com/user-attachments/assets/be722938-3d80-4eaa-bd96-914991e43990)
+![image](https://github.com/user-attachments/assets/585d1778-bbc5-456b-a033-6a69eadcb9fa)
+
+
+
+
+
+
+
+
+
+
+
