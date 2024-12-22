@@ -595,13 +595,13 @@ app.post("/send-quiz-completion-email", async (req, res) => {
         </div>
         <h1 style="color: #333; text-align: center;">Quiz Completed!</h1>
         <p style="color: #555; font-size: 16px; line-height: 1.5;">
-          The quiz has been completed with a score of <strong>${score}</strong> out of 10.
+          The quiz has been completed with a score of <strong>${score}</strong> out of 20.
         </p>
         <p style="color: #555; font-size: 16px; line-height: 1.5;">
           Here are the details of the quiz:
         </p>
         <ul style="color: #555; font-size: 16px;">
-          <li><strong>Score:</strong> ${score} / 10</li>
+          <li><strong>Score:</strong> ${score} / 20</li>
           <li><strong>Incorrect Answers & Click To Research Them:</strong></li>
           <ul style="padding-left: 20px;">
             ${incorrectAnswersList}
