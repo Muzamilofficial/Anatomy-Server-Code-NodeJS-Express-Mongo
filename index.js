@@ -1086,7 +1086,7 @@ app.get('/update-password', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Anatomy Password Reset</title>
+      <title>Update Password</title>
       <style>
         /* General Reset */
         * {
@@ -1140,6 +1140,7 @@ app.get('/update-password', (req, res) => {
         .form-group {
           margin-bottom: 15px;
           text-align: left;
+          position: relative;
         }
         .form-group label {
           display: block;
@@ -1150,6 +1151,7 @@ app.get('/update-password', (req, res) => {
         .form-group input {
           width: 100%;
           padding: 12px;
+          padding-right: 40px;
           border: 1px solid #ccc;
           border-radius: 5px;
           font-size: 1rem;
@@ -1166,22 +1168,23 @@ app.get('/update-password', (req, res) => {
           right: 15px;
           top: 50%;
           transform: translateY(-50%);
+          font-size: 1.2rem;
           color: #007bff;
         }
         .btn {
           width: 100%;
-          background: #007bff;
+          background: #000;
           color: #fff;
           padding: 12px;
           border: none;
-          border-radius: 5px;
+          border-radius: 10px;
           font-size: 1rem;
           cursor: pointer;
           margin-top: 15px;
           transition: background 0.3s ease;
         }
         .btn:hover {
-          background: #0056b3;
+          background: #333;
         }
         .alert {
           margin-bottom: 15px;
@@ -1217,19 +1220,19 @@ app.get('/update-password', (req, res) => {
     <body>
       <div class="container">
         <div class="logo"></div>
-        <h1>Anatomy Password Reset</h1>
+        <h1>Update Password</h1>
         <div id="alert" class="alert"></div>
         <form action="/update-password" method="POST" onsubmit="return validateForm()">
           <div class="form-group">
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" placeholder="Enter your email" required>
           </div>
-          <div class="form-group" style="position: relative;">
+          <div class="form-group">
             <label for="password">New Password:</label>
             <input type="password" id="password" name="password" placeholder="Enter new password" required>
             <span class="toggle-password" onclick="togglePassword('password')">👁</span>
           </div>
-          <div class="form-group" style="position: relative;">
+          <div class="form-group">
             <label for="confirmPassword">Confirm Password:</label>
             <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
             <span class="toggle-password" onclick="togglePassword('confirmPassword')">👁</span>
@@ -1270,6 +1273,7 @@ app.get('/update-password', (req, res) => {
     </html>
   `);
 });
+
 
 
 // Handle Password Update
