@@ -989,24 +989,37 @@ app.post('/check-email', async (req, res) => {
       const resetLink = 'https://www.google.com';
 
       const emailTemplate = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <img src="cid:appLogo" alt="Anatomy Logo" style="max-width: 150px;" />
-        </div>
-        <h1 style="color: #333; text-align: center;">Reset Your Password!</h1>
-        <div style="text-align: center; margin: 20px 0;">
-            <a href="${resetLink}" style="background-color: #007bff; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-size: 16px; display: inline-block;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="cid:appLogo" alt="Anatomy Logo" style="max-width: 150px;" />
+          </div>
+          <h1 style="color: #333; text-align: center;">Reset Your Password</h1>
+          <p style="font-size: 16px; color: #555; text-align: center;">
+            Hello, <br/>
+            We received a request to reset your password. Click the button below to proceed.
+          </p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${resetLink}" style="background-color: #007bff; color: white; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-size: 16px; font-weight: bold; display: inline-block;">
               Reset Password
             </a>
           </div>
-        <div style="text-align: center; margin-top: 20px;">
-          <a href="http://www.yourcompany.com" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Anatomy</a>
+          <p style="font-size: 14px; color: #555; text-align: center; margin-top: 10px;">
+            If you did not request a password reset, you can safely ignore this email.
+          </p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="http://www.yourcompany.com" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold;">
+              Visit Anatomy
+            </a>
+          </div>
+          <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px; border-radius: 0 0 8px 8px;">
+            <p style="font-size: 14px; margin: 0;">&copy; 2024 Anatomy. All Rights Reserved.</p>
+            <p style="font-size: 12px; margin: 0;">This is an automated email. Please do not reply.</p>
+            <p style="font-size: 12px; margin: 5px 0;">
+              <a href="http://www.yourcompany.com/privacy" style="color: #fff; text-decoration: underline;">Privacy Policy</a> | 
+              <a href="http://www.yourcompany.com/terms" style="color: #fff; text-decoration: underline;">Terms of Service</a>
+            </p>
+          </footer>
         </div>
-        <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
-          <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
-          <p style="font-size: 12px;">This is an automated email. Please do not reply.</p>
-        </footer>
-      </div>
       `;
 
       const mailOptions = {
@@ -1018,7 +1031,7 @@ app.post('/check-email', async (req, res) => {
           {
             filename: 'logo.png',
             path: path.resolve(__dirname, 'assets/images/logo.png'),
-            cid: 'logo', // Same as the "cid" in the <img> tag
+            cid: 'appLogo', // Same as the "cid" in the <img> tag
           },
         ],
       };
@@ -1026,19 +1039,20 @@ app.post('/check-email', async (req, res) => {
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error('Error sending email:', error);
-          return res.status(500).json({ success: false, message: 'Error sending email' });
+          return res.status(500).json({ success: false, message: 'Failed to send the email. Please try again later.' });
         } else {
-          return res.status(200).json({ success: true, message: 'Email sent successfully' });
+          return res.status(200).json({ success: true, message: 'Email sent successfully!' });
         }
       });
     } else {
-      return res.status(404).json({ success: false, message: 'Email not found' });
+      return res.status(404).json({ success: false, message: 'No user found with this email address.' });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'An error occurred' });
+    console.error('Server Error:', error);
+    res.status(500).json({ success: false, message: 'An internal server error occurred. Please try again later.' });
   }
 });
+
 
 // Start the server
 app.listen(PORT, () => {
