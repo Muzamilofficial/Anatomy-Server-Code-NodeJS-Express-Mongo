@@ -1023,17 +1023,17 @@ app.post('/check-email', async (req, res) => {
           </div>
           <!-- Visit Website Section -->
           <div style="text-align: center; margin-top: 20px;">
-            <a href="http://www.yourcompany.com" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold;">
+            <a href="http://www.anatomy.com" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold;">
               Visit Our Website
             </a>
           </div>
           <!-- Footer -->
           <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 30px; border-radius: 0 0 10px 10px;">
-            <p style="font-size: 14px; margin: 0;">&copy; 2024 Your Company. All Rights Reserved.</p>
+            <p style="font-size: 14px; margin: 0;">&copy; 2024 Anatomy. All Rights Reserved.</p>
             <p style="font-size: 12px; margin: 5px 0;">This is an automated email. Please do not reply.</p>
             <p style="font-size: 12px; margin: 5px 0;">
-              <a href="http://www.yourcompany.com/privacy" style="color: #fff; text-decoration: underline;">Privacy Policy</a> | 
-              <a href="http://www.yourcompany.com/terms" style="color: #fff; text-decoration: underline;">Terms of Service</a>
+              <a href="http://www.anatomy.com/privacy" style="color: #fff; text-decoration: underline;">Privacy Policy</a> | 
+              <a href="http://www.anatomy.com/terms" style="color: #fff; text-decoration: underline;">Terms of Service</a>
             </p>
           </footer>
         </div>
@@ -1043,7 +1043,7 @@ app.post('/check-email', async (req, res) => {
       const mailOptions = {
         from: process.env.SENDER_EMAIL,
         to: email,
-        subject: 'Password Reset Request - Your Company',
+        subject: 'Password Reset Request - Anatomy',
         html: emailTemplate,
         attachments: [
           {
