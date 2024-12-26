@@ -977,25 +977,55 @@ app.post('/fetchquizscores', async (req, res) => {
 
 
 
-// API endpoint to check if email exists and send the email
+// API endpoint to check email and send a styled email
 app.post('/check-email', async (req, res) => {
   const { email } = req.body;
 
   try {
-    // Check if email exists in the database
+    // Replace this with your database query
     const user = await User.findOne({ email });
 
     if (user) {
-      // Send an email with a reset link
+      const resetLink = 'https://www.google.com';
+
+      const emailTemplate = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="cid:appLogo" alt="Anatomy Logo" style="max-width: 150px;" />
+        </div>
+        <h1 style="color: #333; text-align: center;">Reset Your Password!</h1>
+        <div style="text-align: center; margin: 20px 0;">
+            <a href="${resetLink}" style="background-color: #007bff; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-size: 16px; display: inline-block;">
+              Reset Password
+            </a>
+          </div>
+        <div style="text-align: center; margin-top: 20px;">
+          <a href="http://www.yourcompany.com" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Visit Anatomy</a>
+        </div>
+        <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
+          <p style="font-size: 14px;">&copy; 2024 Anatomy. All Rights Reserved.</p>
+          <p style="font-size: 12px;">This is an automated email. Please do not reply.</p>
+        </footer>
+      </div>
+      `;
+
       const mailOptions = {
         from: process.env.SENDER_EMAIL,
         to: email,
         subject: 'Password Reset Request',
-        text: 'Click the link to reset your password: www.google.com',
+        html: emailTemplate,
+        attachments: [
+          {
+            filename: 'logo.png',
+            path: path.resolve(__dirname, 'assets/images/logo.png'),
+            cid: 'logo', // Same as the "cid" in the <img> tag
+          },
+        ],
       };
 
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
+          console.error('Error sending email:', error);
           return res.status(500).json({ success: false, message: 'Error sending email' });
         } else {
           return res.status(200).json({ success: true, message: 'Email sent successfully' });
