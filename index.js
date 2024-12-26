@@ -996,7 +996,7 @@ app.post('/check-email', async (req, res) => {
             <img src="cid:appLogo" alt="Company Logo" style="max-width: 150px;" />
           </div>
           <!-- Header -->
-          <h1 style="color: #333; text-align: center;">Reset Your Password</h1>
+          <h1 style="color: #333; text-align: center;">Anatomy Reset Your Password</h1>
           <p style="font-size: 16px; color: #555; text-align: center; margin-top: 10px;">
             Hello <strong>${user.name || 'User'}</strong>,
           </p>
