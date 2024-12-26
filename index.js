@@ -1086,7 +1086,8 @@ app.get('/update-password', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Update Password</title>
+      <title>Anatomy Password Reset</title>
+      <link rel="icon" href="assets/images/logo.png">
       <style>
         /* General Reset */
         * {
