@@ -1221,7 +1221,7 @@ app.get('/update-password', (req, res) => {
     <body>
       <div class="container">
         <div class="logo"></div>
-        <h1>Update Password</h1>
+        <h1>Anatomy Password Reset</h1>
         <div id="alert" class="alert"></div>
         <form action="/update-password" method="POST" onsubmit="return validateForm()">
           <div class="form-group">
