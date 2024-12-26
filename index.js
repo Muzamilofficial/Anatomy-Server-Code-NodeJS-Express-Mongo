@@ -975,7 +975,6 @@ app.post('/fetchquizscores', async (req, res) => {
   }
 });
 
-// API to check email and send link
 app.post('/send-email', async (req, res) => {
   const { email } = req.body;
 
@@ -984,7 +983,11 @@ app.post('/send-email', async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ email });
+    console.log('Email received:', email);
+    // Use case-insensitive search
+    const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
+    console.log('User found:', user);
+
     if (!user) {
       return res.status(404).json({ message: 'Email not found' });
     }
@@ -999,9 +1002,11 @@ app.post('/send-email', async (req, res) => {
 
     res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {
+    console.error('Error:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 });
+
 
 
 // Start the server
