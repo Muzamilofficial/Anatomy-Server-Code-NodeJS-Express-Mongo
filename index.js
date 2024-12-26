@@ -1073,6 +1073,126 @@ app.post('/check-email', async (req, res) => {
 });
 
 
+// API endpoint to reset password
+// Serve Password Update Page
+app.get('/anatomy-update-password', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Update Password</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #f4f4f4;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          margin: 0;
+        }
+        .container {
+          background: #fff;
+          padding: 20px;
+          border-radius: 10px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          width: 350px;
+        }
+        h2 {
+          margin-bottom: 20px;
+          color: #333;
+          text-align: center;
+        }
+        form {
+          display: flex;
+          flex-direction: column;
+        }
+        input {
+          margin-bottom: 15px;
+          padding: 10px;
+          font-size: 16px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+        }
+        button {
+          padding: 10px;
+          background-color: #28a745;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          font-size: 16px;
+          cursor: pointer;
+        }
+        button:hover {
+          background-color: #218838;
+        }
+        .password-toggle {
+          position: relative;
+        }
+        .password-toggle span {
+          position: absolute;
+          right: 10px;
+          top: 10px;
+          cursor: pointer;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>Update Password</h2>
+        <form action="/update-password" method="POST">
+          <input type="email" name="email" placeholder="Enter your email" required>
+          <div class="password-toggle">
+            <input type="password" name="password" id="password" placeholder="New Password" required>
+            <span onclick="togglePassword('password')">👁️</span>
+          </div>
+          <div class="password-toggle">
+            <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm Password" required>
+            <span onclick="togglePassword('confirmPassword')">👁️</span>
+          </div>
+          <button type="submit">Update Password</button>
+        </form>
+      </div>
+      <script>
+        function togglePassword(fieldId) {
+          const field = document.getElementById(fieldId);
+          field.type = field.type === 'password' ? 'text' : 'password';
+        }
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+// Handle Password Update
+app.post('/anatomy-update-password', async (req, res) => {
+  const { email, password, confirmPassword } = req.body;
+
+  if (password !== confirmPassword) {
+    return res.send('<script>alert("Passwords do not match!"); window.location.href = "/update-password";</script>');
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.findOneAndUpdate(
+      { email },
+      { password: hashedPassword },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.send('<script>alert("User not found!"); window.location.href = "/update-password";</script>');
+    }
+
+    res.send('<script>alert("Password updated successfully!"); window.location.href = "/update-password";</script>');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('<script>alert("Error updating password. Please try again later."); window.location.href = "/update-password";</script>');
+  }
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running at http://${IP_ADDRESS}:${PORT}`);
