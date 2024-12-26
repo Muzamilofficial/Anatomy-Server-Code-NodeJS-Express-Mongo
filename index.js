@@ -1167,7 +1167,7 @@ app.get('/update-password', (req, res) => {
           cursor: pointer;
           position: absolute;
           right: 15px;
-          top: 38%;
+          top: 60%;
           transform: translateY(-50%);
           font-size: 1.2rem;
           color: #007bff;
