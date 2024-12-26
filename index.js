@@ -977,6 +977,38 @@ app.post('/fetchquizscores', async (req, res) => {
 
 
 
+// API endpoint to check if email exists and send the email
+app.post('/check-email', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Check if email exists in the database
+    const user = await User.findOne({ email });
+
+    if (user) {
+      // Send an email with a reset link
+      const mailOptions = {
+        from: process.env.SENDER_EMAIL,
+        to: email,
+        subject: 'Password Reset Request',
+        text: 'Click the link to reset your password: www.google.com',
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          return res.status(500).json({ success: false, message: 'Error sending email' });
+        } else {
+          return res.status(200).json({ success: true, message: 'Email sent successfully' });
+        }
+      });
+    } else {
+      return res.status(404).json({ success: false, message: 'Email not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'An error occurred' });
+  }
+});
 
 // Start the server
 app.listen(PORT, () => {
