@@ -1212,11 +1212,20 @@ app.post('/update-password', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    // Debugging: Log input email
+    console.log(`Attempting to update password for email: ${email}`);
+
+    // Find user by email (case-insensitive)
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+
     if (!user) {
+      console.log('User not found in database.');
       return res.status(404).send('<script>alert("Invalid email. User not found."); window.location.href="/update-password";</script>');
     }
 
+    console.log('User found:', user);
+
+    // Hash the new password and update
     const hashedPassword = await bcrypt.hash(password, 10);
     user.password = hashedPassword;
     await user.save();
@@ -1227,6 +1236,7 @@ app.post('/update-password', async (req, res) => {
     res.status(500).send('<script>alert("An error occurred. Please try again later."); window.location.href="/update-password";</script>');
   }
 });
+
 
 
 // Start the server
