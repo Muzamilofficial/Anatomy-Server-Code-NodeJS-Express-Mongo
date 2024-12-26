@@ -975,37 +975,6 @@ app.post('/fetchquizscores', async (req, res) => {
   }
 });
 
-app.post('/send-email', async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: 'Email is required' });
-  }
-
-  try {
-    console.log('Email received:', email);
-    // Use case-insensitive search
-    const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
-    console.log('User found:', user);
-
-    if (!user) {
-      return res.status(404).json({ message: 'Email not found' });
-    }
-
-    // Send email
-    await transporter.sendMail({
-      from: 'muzamilkhanofficial786@gmail.com',
-      to: email,
-      subject: 'Password Reset Link',
-      text: 'Click the link to reset your password: https://www.google.com',
-    });
-
-    res.status(200).json({ message: 'Email sent successfully' });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ message: 'Server error', error });
-  }
-});
 
 
 
