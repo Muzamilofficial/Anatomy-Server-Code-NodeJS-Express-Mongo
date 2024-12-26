@@ -991,34 +991,7 @@ app.post('/check-email', async (req, res) => {
         from: process.env.SENDER_EMAIL,
         to: email,
         subject: 'Password Reset Request',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9;">
-            <div style="text-align: center; margin-bottom: 20px;">
-              <img src="cid:appLogo" alt="App Logo" style="max-width: 150px;" />
-            </div>
-            <h1 style="color: #333; text-align: center;">Password Reset Request</h1>
-            <p style="color: #555; font-size: 16px; line-height: 1.5;">
-              Hello ${user.name || 'User'}, we received a request to reset your password. Please click the button below to reset your password.
-            </p>
-            <div style="text-align: center; margin-top: 20px;">
-              <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Reset Password</a>
-            </div>
-            <p style="color: #555; font-size: 14px; line-height: 1.5; margin-top: 20px;">
-              If you did not request this, you can safely ignore this email. Your password will remain unchanged.
-            </p>
-            <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px;">
-              <p style="font-size: 14px;">&copy; 2024 Your App Name. All Rights Reserved.</p>
-              <p style="font-size: 12px;">This is an automated email. Please do not reply.</p>
-            </footer>
-          </div>
-        `,
-        attachments: [
-          {
-            filename: 'logo.png',
-            path: './static/logo.png', // Path to your logo image
-            cid: 'appLogo', // Attach logo as an inline image
-          },
-        ],
+        text: 'Click the link to reset your password: www.google.com',
       };
 
       transporter.sendMail(mailOptions, (error, info) => {
