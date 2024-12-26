@@ -1006,7 +1006,7 @@ app.post('/check-email', async (req, res) => {
           <!-- Reset Password Button -->
           <div style="text-align: center; margin: 20px 0;">
             <a href="${resetLink}" style="background-color: #007bff; color: white; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-size: 16px; font-weight: bold;">
-              Reset Password
+             Click To Reset Password
             </a>
           </div>
           <p style="font-size: 14px; color: #555; text-align: center; margin-top: 10px;">
