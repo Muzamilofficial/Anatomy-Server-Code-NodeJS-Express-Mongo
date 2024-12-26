@@ -975,11 +975,38 @@ app.post('/fetchquizscores', async (req, res) => {
   }
 });
 
+// API to check email and send link
+app.post('/send-email', async (req, res) => {
+  const { email } = req.body;
 
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Email not found' });
+    }
+
+    // Send email
+    await transporter.sendMail({
+      from: 'muzamilkhanofficial786@gmail.com',
+      to: email,
+      subject: 'Password Reset Link',
+      text: 'Click the link to reset your password: https://www.google.com',
+    });
+
+    res.status(200).json({ message: 'Email sent successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
 
 
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running at http://${IP_ADDRESS}:${PORT}`);
 });
+
 
