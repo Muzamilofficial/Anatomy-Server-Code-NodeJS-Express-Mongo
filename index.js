@@ -975,8 +975,6 @@ app.post('/fetchquizscores', async (req, res) => {
   }
 });
 
-
-
 // API endpoint to check email and send a styled email
 app.post('/check-email', async (req, res) => {
   const { email } = req.body;
@@ -1074,8 +1072,8 @@ app.post('/check-email', async (req, res) => {
 
 
 
-// Serve Password Update Page
-app.get('/anatomy-update-password', (req, res) => {
+// Render Update Password Page
+app.get('/update-password', (req, res) => {
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -1086,123 +1084,119 @@ app.get('/anatomy-update-password', (req, res) => {
       <style>
         body {
           font-family: Arial, sans-serif;
-          background-color: #f4f4f4;
+          margin: 0;
+          padding: 0;
           display: flex;
           justify-content: center;
           align-items: center;
           height: 100vh;
-          margin: 0;
+          background-color: #f4f4f9;
         }
         .container {
+          max-width: 400px;
           background: #fff;
           padding: 20px;
           border-radius: 10px;
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          width: 100%;
-          max-width: 400px;
         }
-        h2 {
-          margin-bottom: 20px;
-          color: #333;
-          text-align: center;
-        }
-        form {
-          display: flex;
-          flex-direction: column;
-        }
-        input {
+        .form-group {
           margin-bottom: 15px;
+        }
+        .form-group label {
+          display: block;
+          margin-bottom: 5px;
+        }
+        .form-group input {
+          width: 100%;
           padding: 10px;
-          font-size: 16px;
-          border: 1px solid #ddd;
+          border: 1px solid #ccc;
           border-radius: 5px;
         }
-        button {
-          padding: 10px;
-          background-color: #28a745;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          font-size: 16px;
+        .toggle-password {
           cursor: pointer;
-        }
-        button:hover {
-          background-color: #218838;
-        }
-        .password-toggle {
-          position: relative;
-        }
-        .password-toggle span {
           position: absolute;
           right: 10px;
           top: 10px;
+        }
+        .btn {
+          background: #007bff;
+          color: #fff;
+          padding: 10px;
+          border: none;
+          border-radius: 5px;
           cursor: pointer;
         }
-        .error {
-          color: red;
-          font-size: 14px;
-          margin-bottom: 10px;
+        .btn:hover {
+          background: #0056b3;
+        }
+        .alert {
+          margin-bottom: 15px;
+          padding: 10px;
+          color: #fff;
+          border-radius: 5px;
+          text-align: center;
+        }
+        .alert.success {
+          background-color: #28a745;
+        }
+        .alert.error {
+          background-color: #dc3545;
         }
       </style>
     </head>
     <body>
       <div class="container">
+        <div id="alert" class="alert" style="display: none;"></div>
         <h2>Update Password</h2>
-        <form action="/anatomy-update-password" method="POST" onsubmit="return validateForm()">
-          <div id="emailError" class="error"></div>
-          <input type="email" name="email" id="email" placeholder="Enter your email" required>
-          
-          <div class="password-toggle">
-            <input type="password" name="password" id="password" placeholder="New Password" required>
-            <span onclick="togglePassword('password')">👁️</span>
+        <form action="/update-password" method="POST" onsubmit="return validateForm()">
+          <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
           </div>
-          <div id="passwordError" class="error"></div>
-          
-          <div class="password-toggle">
-            <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm Password" required>
-            <span onclick="togglePassword('confirmPassword')">👁️</span>
+          <div class="form-group">
+            <label for="password">New Password:</label>
+            <div style="position: relative;">
+              <input type="password" id="password" name="password" required>
+              <span class="toggle-password" onclick="togglePassword('password')">👁</span>
+            </div>
           </div>
-          
-          <button type="submit">Update Password</button>
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password:</label>
+            <div style="position: relative;">
+              <input type="password" id="confirmPassword" name="confirmPassword" required>
+              <span class="toggle-password" onclick="togglePassword('confirmPassword')">👁</span>
+            </div>
+          </div>
+          <button type="submit" class="btn">Update Password</button>
         </form>
       </div>
       <script>
-        // Show/Hide Password
         function togglePassword(fieldId) {
           const field = document.getElementById(fieldId);
           field.type = field.type === 'password' ? 'text' : 'password';
         }
 
-        // Form Validation
         function validateForm() {
-          const email = document.getElementById('email').value;
           const password = document.getElementById('password').value;
           const confirmPassword = document.getElementById('confirmPassword').value;
-          const emailError = document.getElementById('emailError');
-          const passwordError = document.getElementById('passwordError');
+          const alertBox = document.getElementById('alert');
 
-          // Clear previous errors
-          emailError.innerText = '';
-          passwordError.innerText = '';
-
-          // Email validation
-          const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
-          if (!emailPattern.test(email)) {
-            emailError.innerText = 'Please enter a valid email address.';
-            return false;
-          }
-
-          // Password validation
-          if (password.length < 6) {
-            passwordError.innerText = 'Password must be at least 6 characters long.';
+          const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$/;
+          if (!passwordRegex.test(password)) {
+            alertBox.textContent = 'Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.';
+            alertBox.className = 'alert error';
+            alertBox.style.display = 'block';
             return false;
           }
 
           if (password !== confirmPassword) {
-            passwordError.innerText = 'Passwords do not match.';
+            alertBox.textContent = 'Passwords do not match.';
+            alertBox.className = 'alert error';
+            alertBox.style.display = 'block';
             return false;
           }
 
+          alertBox.style.display = 'none';
           return true;
         }
       </script>
@@ -1212,29 +1206,31 @@ app.get('/anatomy-update-password', (req, res) => {
 });
 
 // Handle Password Update
-app.post('/anatomy-update-password', async (req, res) => {
+app.post('/update-password', async (req, res) => {
   const { email, password, confirmPassword } = req.body;
 
+  if (!email || !password || !confirmPassword) {
+    return res.status(400).send('<script>alert("All fields are required."); window.location.href="/update-password";</script>');
+  }
+
   if (password !== confirmPassword) {
-    return res.send('<script>alert("Passwords do not match!"); window.location.href = "/anatomy-update-password";</script>');
+    return res.status(400).send('<script>alert("Passwords do not match."); window.location.href="/update-password";</script>');
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.findOneAndUpdate(
-      { email },
-      { password: hashedPassword },
-      { new: true }
-    );
-
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.send('<script>alert("User not found!"); window.location.href = "/anatomy-update-password";</script>');
+      return res.status(404).send('<script>alert("Email not found."); window.location.href="/update-password";</script>');
     }
 
-    res.send('<script>alert("Password updated successfully!"); window.location.href = "/anatomy-update-password";</script>');
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.send('<script>alert("Password updated successfully!"); window.location.href="/update-password";</script>');
   } catch (error) {
-    console.error(error);
-    res.status(500).send('<script>alert("Error updating password. Please try again later."); window.location.href = "/anatomy-update-password";</script>');
+    console.error('Error updating password:', error);
+    res.status(500).send('<script>alert("An error occurred. Please try again later."); window.location.href="/update-password";</script>');
   }
 });
 
