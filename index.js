@@ -1070,10 +1070,13 @@ app.post('/check-email', async (req, res) => {
   }
 });
 
-
+app.use(bodyParser.urlencoded({ extended: true }));
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
+
 
 // Render Update Password Page
 app.get('/update-password', (req, res) => {
