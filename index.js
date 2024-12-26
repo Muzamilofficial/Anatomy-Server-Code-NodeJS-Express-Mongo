@@ -1086,54 +1086,76 @@ app.get('/update-password', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Update Password</title>
+      <title>Anatomy Password Reset</title>
       <style>
         body {
-          font-family: Arial, sans-serif;
+          font-family: 'Arial', sans-serif;
           margin: 0;
           padding: 0;
           display: flex;
           justify-content: center;
           align-items: center;
           height: 100vh;
-          background-color: #f4f4f9;
+          background: linear-gradient(135deg, #000, #fff);
+          color: #333;
         }
         .container {
           max-width: 400px;
           background: #fff;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          padding: 30px;
+          border-radius: 20px;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+          text-align: center;
+        }
+        .logo {
+          margin: 0 auto 20px;
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          background: url('/assets/images/logo.png') no-repeat center center / cover;
+        }
+        h1 {
+          font-size: 1.5rem;
+          margin-bottom: 20px;
+          color: #000;
         }
         .form-group {
           margin-bottom: 15px;
+          text-align: left;
         }
         .form-group label {
           display: block;
           margin-bottom: 5px;
+          font-weight: bold;
         }
         .form-group input {
           width: 100%;
           padding: 10px;
           border: 1px solid #ccc;
           border-radius: 5px;
+          font-size: 1rem;
         }
         .toggle-password {
           cursor: pointer;
           position: absolute;
           right: 10px;
-          top: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #555;
         }
         .btn {
-          background: #007bff;
+          background: #000;
           color: #fff;
-          padding: 10px;
+          padding: 10px 15px;
           border: none;
           border-radius: 5px;
+          font-size: 1rem;
           cursor: pointer;
+          margin-top: 15px;
+          transition: background 0.3s ease;
         }
         .btn:hover {
-          background: #0056b3;
+          background: #333;
         }
         .alert {
           margin-bottom: 15px;
@@ -1141,6 +1163,7 @@ app.get('/update-password', (req, res) => {
           color: #fff;
           border-radius: 5px;
           text-align: center;
+          display: none;
         }
         .alert.success {
           background-color: #28a745;
@@ -1152,8 +1175,9 @@ app.get('/update-password', (req, res) => {
     </head>
     <body>
       <div class="container">
-        <div id="alert" class="alert" style="display: none;"></div>
-        <h2>Update Password</h2>
+        <div class="logo"></div>
+        <h1>Anatomy Password Reset</h1>
+        <div id="alert" class="alert"></div>
         <form action="/update-password" method="POST" onsubmit="return validateForm()">
           <div class="form-group">
             <label for="email">Email:</label>
@@ -1209,6 +1233,7 @@ app.get('/update-password', (req, res) => {
     </html>
   `);
 });
+
 
 // Handle Password Update
 app.post('/update-password', async (req, res) => {
