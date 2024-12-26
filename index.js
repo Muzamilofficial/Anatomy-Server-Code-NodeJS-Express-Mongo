@@ -1072,6 +1072,9 @@ app.post('/check-email', async (req, res) => {
 
 
 
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Render Update Password Page
 app.get('/update-password', (req, res) => {
   res.send(`
@@ -1181,9 +1184,8 @@ app.get('/update-password', (req, res) => {
           const confirmPassword = document.getElementById('confirmPassword').value;
           const alertBox = document.getElementById('alert');
 
-          const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$/;
-          if (!passwordRegex.test(password)) {
-            alertBox.textContent = 'Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.';
+          if (password.length < 8) {
+            alertBox.textContent = 'Password must be at least 8 characters long.';
             alertBox.className = 'alert error';
             alertBox.style.display = 'block';
             return false;
@@ -1207,20 +1209,12 @@ app.get('/update-password', (req, res) => {
 
 // Handle Password Update
 app.post('/update-password', async (req, res) => {
-  const { email, password, confirmPassword } = req.body;
-
-  if (!email || !password || !confirmPassword) {
-    return res.status(400).send('<script>alert("All fields are required."); window.location.href="/update-password";</script>');
-  }
-
-  if (password !== confirmPassword) {
-    return res.status(400).send('<script>alert("Passwords do not match."); window.location.href="/update-password";</script>');
-  }
+  const { email, password } = req.body;
 
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).send('<script>alert("Email not found."); window.location.href="/update-password";</script>');
+      return res.status(404).send('<script>alert("Invalid email. User not found."); window.location.href="/update-password";</script>');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
