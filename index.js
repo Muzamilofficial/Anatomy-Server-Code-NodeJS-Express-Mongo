@@ -1088,24 +1088,41 @@ app.get('/update-password', (req, res) => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Anatomy Password Reset</title>
       <style>
-        body {
-          font-family: 'Arial', sans-serif;
+        /* General Reset */
+        * {
           margin: 0;
           padding: 0;
+          box-sizing: border-box;
+        }
+        body {
+          font-family: 'Arial', sans-serif;
           display: flex;
           justify-content: center;
           align-items: center;
-          height: 100vh;
-          background: linear-gradient(135deg, #000, #fff);
-          color: #333;
+          min-height: 100vh;
+          background: linear-gradient(135deg, #000, #434343);
+          color: #fff;
+          overflow: hidden;
         }
         .container {
+          width: 90%;
           max-width: 400px;
-          background: #fff;
+          background: #ffffff;
           padding: 30px;
           border-radius: 20px;
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
           text-align: center;
+          animation: slideIn 0.6s ease-out;
+        }
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-50px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         .logo {
           margin: 0 auto 20px;
@@ -1113,11 +1130,12 @@ app.get('/update-password', (req, res) => {
           height: 100px;
           border-radius: 50%;
           background: url('/assets/images/logo.png') no-repeat center center / cover;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
         h1 {
-          font-size: 1.5rem;
+          font-size: 1.8rem;
           margin-bottom: 20px;
-          color: #000;
+          color: #333;
         }
         .form-group {
           margin-bottom: 15px;
@@ -1127,26 +1145,34 @@ app.get('/update-password', (req, res) => {
           display: block;
           margin-bottom: 5px;
           font-weight: bold;
+          color: #555;
         }
         .form-group input {
           width: 100%;
-          padding: 10px;
+          padding: 12px;
           border: 1px solid #ccc;
           border-radius: 5px;
           font-size: 1rem;
+          transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+          outline: none;
+          border-color: #007bff;
+          box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
         }
         .toggle-password {
           cursor: pointer;
           position: absolute;
-          right: 10px;
+          right: 15px;
           top: 50%;
           transform: translateY(-50%);
-          color: #555;
+          color: #007bff;
         }
         .btn {
-          background: #000;
+          width: 100%;
+          background: #007bff;
           color: #fff;
-          padding: 10px 15px;
+          padding: 12px;
           border: none;
           border-radius: 5px;
           font-size: 1rem;
@@ -1155,7 +1181,7 @@ app.get('/update-password', (req, res) => {
           transition: background 0.3s ease;
         }
         .btn:hover {
-          background: #333;
+          background: #0056b3;
         }
         .alert {
           margin-bottom: 15px;
@@ -1171,6 +1197,21 @@ app.get('/update-password', (req, res) => {
         .alert.error {
           background-color: #dc3545;
         }
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          .container {
+            padding: 20px;
+          }
+          h1 {
+            font-size: 1.5rem;
+          }
+          .form-group input {
+            font-size: 0.9rem;
+          }
+          .btn {
+            font-size: 0.9rem;
+          }
+        }
       </style>
     </head>
     <body>
@@ -1181,21 +1222,17 @@ app.get('/update-password', (req, res) => {
         <form action="/update-password" method="POST" onsubmit="return validateForm()">
           <div class="form-group">
             <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="position: relative;">
             <label for="password">New Password:</label>
-            <div style="position: relative;">
-              <input type="password" id="password" name="password" required>
-              <span class="toggle-password" onclick="togglePassword('password')">👁</span>
-            </div>
+            <input type="password" id="password" name="password" placeholder="Enter new password" required>
+            <span class="toggle-password" onclick="togglePassword('password')">👁</span>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="position: relative;">
             <label for="confirmPassword">Confirm Password:</label>
-            <div style="position: relative;">
-              <input type="password" id="confirmPassword" name="confirmPassword" required>
-              <span class="toggle-password" onclick="togglePassword('confirmPassword')">👁</span>
-            </div>
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+            <span class="toggle-password" onclick="togglePassword('confirmPassword')">👁</span>
           </div>
           <button type="submit" class="btn">Update Password</button>
         </form>
