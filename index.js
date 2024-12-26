@@ -982,38 +982,55 @@ app.post('/check-email', async (req, res) => {
   const { email } = req.body;
 
   try {
-    // Replace this with your database query
+    // Simulate a database query to find the user
     const user = await User.findOne({ email });
 
     if (user) {
-      const resetLink = 'https://www.google.com';
+      const resetLink = 'https://www.google.com'; // Replace with your actual reset link
 
+      // Professional Email Template
       const emailTemplate = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">
+          <!-- Logo Section -->
           <div style="text-align: center; margin-bottom: 20px;">
-            <img src="cid:appLogo" alt="Anatomy Logo" style="max-width: 150px;" />
+            <img src="cid:appLogo" alt="Company Logo" style="max-width: 150px;" />
           </div>
+          <!-- Header -->
           <h1 style="color: #333; text-align: center;">Reset Your Password</h1>
-          <p style="font-size: 16px; color: #555; text-align: center;">
-            Hello, <br/>
-            We received a request to reset your password. Click the button below to proceed.
+          <p style="font-size: 16px; color: #555; text-align: center; margin-top: 10px;">
+            Hello <strong>${user.name || 'User'}</strong>,
           </p>
+          <p style="font-size: 16px; color: #555; text-align: center;">
+            You recently requested to reset your password for your account. Click the button below to reset it:
+          </p>
+          <!-- Reset Password Button -->
           <div style="text-align: center; margin: 20px 0;">
-            <a href="${resetLink}" style="background-color: #007bff; color: white; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-size: 16px; font-weight: bold; display: inline-block;">
+            <a href="${resetLink}" style="background-color: #007bff; color: white; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-size: 16px; font-weight: bold;">
               Reset Password
             </a>
           </div>
           <p style="font-size: 14px; color: #555; text-align: center; margin-top: 10px;">
-            If you did not request a password reset, you can safely ignore this email.
+            If you didn’t request this, you can safely ignore this email. Your password will remain unchanged.
           </p>
-          <div style="text-align: center; margin: 20px 0;">
-            <a href="http://www.yourcompany.com" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold;">
-              Visit Anatomy
+          <!-- Security Tips Section -->
+          <div style="background-color: #f1f1f1; padding: 15px; border-radius: 8px; margin-top: 20px;">
+            <h3 style="color: #007bff; font-size: 18px;">Security Tips:</h3>
+            <ul style="color: #555; font-size: 14px; padding-left: 20px;">
+              <li>Keep your password secure and do not share it with anyone.</li>
+              <li>Avoid using public Wi-Fi when accessing your account.</li>
+              <li>Enable two-factor authentication (if available).</li>
+            </ul>
+          </div>
+          <!-- Visit Website Section -->
+          <div style="text-align: center; margin-top: 20px;">
+            <a href="http://www.yourcompany.com" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold;">
+              Visit Our Website
             </a>
           </div>
-          <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 20px; border-radius: 0 0 8px 8px;">
-            <p style="font-size: 14px; margin: 0;">&copy; 2024 Anatomy. All Rights Reserved.</p>
-            <p style="font-size: 12px; margin: 0;">This is an automated email. Please do not reply.</p>
+          <!-- Footer -->
+          <footer style="background-color: #333; color: white; padding: 10px; text-align: center; margin-top: 30px; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 14px; margin: 0;">&copy; 2024 Your Company. All Rights Reserved.</p>
+            <p style="font-size: 12px; margin: 5px 0;">This is an automated email. Please do not reply.</p>
             <p style="font-size: 12px; margin: 5px 0;">
               <a href="http://www.yourcompany.com/privacy" style="color: #fff; text-decoration: underline;">Privacy Policy</a> | 
               <a href="http://www.yourcompany.com/terms" style="color: #fff; text-decoration: underline;">Terms of Service</a>
@@ -1022,10 +1039,11 @@ app.post('/check-email', async (req, res) => {
         </div>
       `;
 
+      // Mail Options
       const mailOptions = {
         from: process.env.SENDER_EMAIL,
         to: email,
-        subject: 'Password Reset Request',
+        subject: 'Password Reset Request - Your Company',
         html: emailTemplate,
         attachments: [
           {
@@ -1036,6 +1054,7 @@ app.post('/check-email', async (req, res) => {
         ],
       };
 
+      // Send the Email
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error('Error sending email:', error);
