@@ -1307,7 +1307,19 @@ app.post('/update-password', async (req, res) => {
   }
 });
 
-
+// API endpoint to get user by email
+app.get("/api/user/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
 
 // Start the server
 app.listen(PORT, () => {
