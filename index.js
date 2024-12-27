@@ -1324,7 +1324,33 @@ app.get("/user", async (req, res) => {
   }
 });
 
+// Route to save quiz data
+app.post("/save-advance-quiz", async (req, res) => {
+  const { email, score } = req.body;
 
+  try {
+    let quizEntry = await Quiz.findOne({ email });
+
+    if (quizEntry) {
+      // Update existing entry
+      quizEntry.AdvanceQuiz = true;
+      quizEntry.AdvanceQuizMarks = score;
+    } else {
+      // Create new entry
+      quizEntry = new Quiz({
+        email,
+        AdvanceQuiz: true,
+        AdvanceQuizMarks: score,
+      });
+    }
+
+    await quizEntry.save();
+    res.status(200).json({ message: "Quiz data saved successfully!" });
+  } catch (error) {
+    console.error("Error saving quiz data:", error);
+    res.status(500).json({ message: "Error saving quiz data" });
+  }
+});
 
 // Start the server
 app.listen(PORT, () => {
