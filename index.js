@@ -984,7 +984,7 @@ app.post('/check-email', async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user) {
-      const resetLink = 'https://www.google.com'; // Replace with your actual reset link
+      const resetLink = 'https://anatomy-two.vercel.app/update-password'; // Replace with your actual reset link
 
       // Professional Email Template
       const emailTemplate = `
