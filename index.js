@@ -26,7 +26,6 @@ app.use(cors());
 app.use(bodyParser.json());
 
 
-
 passport.use(
   new GoogleStrategy(
     {
@@ -151,7 +150,6 @@ passport.use(
   )
 );
 
-
 app.post('/verify-otp', async (req, res) => {
   const { email, otp } = req.body;
 
@@ -179,12 +177,6 @@ app.post('/verify-otp', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
-
-
-
-
-
 
 // Passport session management
 passport.serializeUser((user, done) => done(null, user));
@@ -375,11 +367,6 @@ app.get("/login-success", (req, res) => {
     </html>
   `);
 });
-
-
-
-
-
 
 
 app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
@@ -921,56 +908,127 @@ const quizSchema = new mongoose.Schema({
   AdvanceQuiz: { type: Boolean, default: null },
   BasicQuizMarks: { type: Number, default: null },
   AdvanceQuizMarks: { type: Number, default: null },
+  date: { type: Date, default: Date.now }, // New date field
 });
 
 const Quiz = mongoose.model("Quiz", quizSchema);
 
 // Route to save quiz data
+// app.post("/save-basic-quiz", async (req, res) => {
+//   const { email, score } = req.body;
+
+//   try {
+//     let quizEntry = await Quiz.findOne({ email });
+
+//     if (quizEntry) {
+//       // Update existing entry
+//       quizEntry.BasicQuiz = true;
+//       quizEntry.BasicQuizMarks = score;
+//     } else {
+//       // Create new entry
+//       quizEntry = new Quiz({
+//         email,
+//         BasicQuiz: true,
+//         BasicQuizMarks: score,
+//       });
+//     }
+
+//     await quizEntry.save();
+//     res.status(200).json({ message: "Quiz data saved successfully!" });
+//   } catch (error) {
+//     console.error("Error saving quiz data:", error);
+//     res.status(500).json({ message: "Error saving quiz data" });
+//   }
+// });
+
+// Route to save basic-quiz data
 app.post("/save-basic-quiz", async (req, res) => {
   const { email, score } = req.body;
 
   try {
-    let quizEntry = await Quiz.findOne({ email });
+    let quizEntries = await Quiz.find({ email });
 
-    if (quizEntry) {
-      // Update existing entry
-      quizEntry.BasicQuiz = true;
-      quizEntry.BasicQuizMarks = score;
-    } else {
-      // Create new entry
-      quizEntry = new Quiz({
+    if (quizEntries.length < 3) {
+      // Less than 3 entries: Add a new one
+      const newQuizEntry = new Quiz({
         email,
         BasicQuiz: true,
         BasicQuizMarks: score,
+        date: new Date(), // Store current date
       });
-    }
+      await newQuizEntry.save();
+      return res.status(200).json({ message: "New quiz entry added successfully!" });
+    } else if (quizEntries.length === 3) {
+      // Exactly 3 entries: Find the one with the lowest score and update it
+      let lowestEntry = quizEntries.reduce((min, entry) =>
+        entry.BasicQuizMarks < min.BasicQuizMarks ? entry : min
+      );
 
-    await quizEntry.save();
-    res.status(200).json({ message: "Quiz data saved successfully!" });
+      if (lowestEntry.BasicQuizMarks < score) {
+        lowestEntry.BasicQuizMarks = score;
+        lowestEntry.date = new Date(); // Update date on modification
+        await lowestEntry.save();
+        return res.status(200).json({ message: "Lowest score updated successfully!" });
+      } else {
+        return res.status(400).json({ message: "Score is not higher than the lowest existing score. No update performed." });
+      }
+    } else {
+      // More than 3 entries: Do not allow updates
+      return res.status(400).json({ message: "Maximum quiz entries reached. No update allowed." });
+    }
   } catch (error) {
     console.error("Error saving quiz data:", error);
     res.status(500).json({ message: "Error saving quiz data" });
   }
 });
 
+
+// API Endpoint to get user quiz scores
+// app.post('/fetchquizscores', async (req, res) => {
+//   const { email } = req.body;
+//   try {
+//     const quizData = await Quiz.findOne({ email });
+//     if (!quizData) {
+//       // Default values for non-existent users
+//       return res.json({
+//         BasicQuizMarks: 0, // Default to 0 for BasicQuiz
+//         AdvanceQuizMarks: '--', // Default to "--" for AdvanceQuiz
+//       });
+//     }
+//     res.json({
+//       BasicQuizMarks: quizData.BasicQuizMarks !== null ? quizData.BasicQuizMarks : 0, // Default to 0 if null
+//       AdvanceQuizMarks: quizData.AdvanceQuizMarks !== null ? quizData.AdvanceQuizMarks : '--', // Default to "--" if null
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// });
+
 // API Endpoint to get user quiz scores
 app.post('/fetchquizscores', async (req, res) => {
   const { email } = req.body;
+
   try {
-    const quizData = await Quiz.findOne({ email });
-    if (!quizData) {
-      // Default values for non-existent users
+    const quizData = await Quiz.find({ email });
+
+    if (!quizData || quizData.length === 0) {
       return res.json({
-        BasicQuizMarks: 0, // Default to 0 for BasicQuiz
-        AdvanceQuizMarks: '--', // Default to "--" for AdvanceQuiz
+        BasicQuizMarks: 0, // Default to 0 if no data
+        AdvanceQuizMarks: '--', // Default to "--" if no data
       });
     }
+
+    // Get the highest BasicQuizMarks and AdvanceQuizMarks
+    const highestBasicQuizMarks = Math.max(...quizData.map(q => q.BasicQuizMarks || 0));
+    const highestAdvanceQuizMarks = Math.max(...quizData.map(q => q.AdvanceQuizMarks || 0));
+
     res.json({
-      BasicQuizMarks: quizData.BasicQuizMarks !== null ? quizData.BasicQuizMarks : 0, // Default to 0 if null
-      AdvanceQuizMarks: quizData.AdvanceQuizMarks !== null ? quizData.AdvanceQuizMarks : '--', // Default to "--" if null
+      BasicQuizMarks: highestBasicQuizMarks,
+      AdvanceQuizMarks: highestAdvanceQuizMarks > 0 ? highestAdvanceQuizMarks : '--',
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching quiz scores:", error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -984,7 +1042,7 @@ app.post('/check-email', async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user) {
-      const resetLink = 'https://anatomy-two.vercel.app/update-password'; // Replace with your actual reset link
+      const resetLink = 'https://anatomy-fawn.vercel.app/update-password'; // Replace with your actual reset link
 
       // Professional Email Template
       const emailTemplate = `
@@ -1076,7 +1134,6 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
-
 
 // Render Update Password Page
 app.get('/update-password', (req, res) => {
@@ -1275,8 +1332,6 @@ app.get('/update-password', (req, res) => {
   `);
 });
 
-
-
 // Handle Password Update
 app.post('/update-password', async (req, res) => {
   const { email, password } = req.body;
@@ -1307,7 +1362,6 @@ app.post('/update-password', async (req, res) => {
   }
 });
 
-
 // Endpoint to fetch user data
 app.get("/user", async (req, res) => {
   const { email } = req.query;
@@ -1325,32 +1379,105 @@ app.get("/user", async (req, res) => {
 });
 
 // Route to save quiz data
+// app.post("/save-advance-quiz", async (req, res) => {
+//   const { email, score } = req.body;
+
+//   try {
+//     let quizEntry = await Quiz.findOne({ email });
+
+//     if (quizEntry) {
+//       // Update existing entry
+//       quizEntry.AdvanceQuiz = true;
+//       quizEntry.AdvanceQuizMarks = score;
+//     } else {
+//       // Create new entry
+//       quizEntry = new Quiz({
+//         email,
+//         AdvanceQuiz: true,
+//         AdvanceQuizMarks: score,
+//       });
+//     }
+
+//     await quizEntry.save();
+//     res.status(200).json({ message: "Quiz data saved successfully!" });
+//   } catch (error) {
+//     console.error("Error saving quiz data:", error);
+//     res.status(500).json({ message: "Error saving quiz data" });
+//   }
+// });
+
+// Route to save advance-quiz data
 app.post("/save-advance-quiz", async (req, res) => {
   const { email, score } = req.body;
 
   try {
-    let quizEntry = await Quiz.findOne({ email });
+    let quizEntries = await Quiz.find({ email });
 
-    if (quizEntry) {
-      // Update existing entry
-      quizEntry.AdvanceQuiz = true;
-      quizEntry.AdvanceQuizMarks = score;
-    } else {
-      // Create new entry
-      quizEntry = new Quiz({
+    if (quizEntries.length < 3) {
+      // Less than 3 entries: Add a new one
+      const newQuizEntry = new Quiz({
         email,
         AdvanceQuiz: true,
         AdvanceQuizMarks: score,
+        date: new Date(), // Store current date
       });
-    }
+      await newQuizEntry.save();
+      return res.status(200).json({ message: "New quiz entry added successfully!" });
+    } else if (quizEntries.length === 3) {
+      // Exactly 3 entries: Find the one with the lowest score and update it
+      let lowestEntry = quizEntries.reduce((min, entry) =>
+        entry.AdvanceQuizMarks < min.AdvanceQuizMarks ? entry : min
+      );
 
-    await quizEntry.save();
-    res.status(200).json({ message: "Quiz data saved successfully!" });
+      if (lowestEntry.AdvanceQuizMarks < score) {
+        lowestEntry.AdvanceQuizMarks = score;
+        lowestEntry.date = new Date(); // Update date on modification
+        await lowestEntry.save();
+        return res.status(200).json({ message: "Lowest score updated successfully!" });
+      } else {
+        return res.status(400).json({ message: "Score is not higher than the lowest existing score. No update performed." });
+      }
+    } else {
+      // More than 3 entries: Do not allow updates
+      return res.status(400).json({ message: "Maximum quiz entries reached. No update allowed." });
+    }
   } catch (error) {
     console.error("Error saving quiz data:", error);
     res.status(500).json({ message: "Error saving quiz data" });
   }
 });
+
+// Add quiz-history API for fetching quiz history of user
+app.get("/quiz-history", async (req, res) => {
+  const { email } = req.query;
+
+  try {
+    const quizHistory = await Quiz.find({ email });
+
+    if (!quizHistory || quizHistory.length === 0) {
+      return res.json({ message: "No quiz history found for this user.", history: [] });
+    }
+
+    res.json({
+      message: "Quiz history fetched successfully!",
+      history: quizHistory.map((quiz, index) => ({
+        attempt: index + 1,
+        BasicQuiz: quiz.BasicQuiz || false,
+        BasicQuizMarks: quiz.BasicQuizMarks ?? 0,
+        AdvanceQuiz: quiz.AdvanceQuiz || false,
+        AdvanceQuizMarks: quiz.AdvanceQuizMarks ?? "Not Atempt Yet",
+        date: quiz.date || "Unknown",
+      })),
+    });
+  } catch (error) {
+    console.error("Error fetching quiz history:", error);
+    res.status(500).json({ message: "Internal server error", error: error.toString() });
+  }
+});
+
+
+
+
 
 // Start the server
 app.listen(PORT, () => {
