@@ -1529,10 +1529,9 @@ app.get("/download-quiz-history", async (req, res) => {
     const quizHistory = await Quiz.find({ email });
 
     if (!quizHistory || quizHistory.length === 0) {
-      return res.send("<h2>No quiz history found for this user.</h2>");
+      return res.send("<h2 style='text-align:center;color:#ff6b6b;'>⚠️ No quiz history found for this user.</h2>");
     }
 
-    // Generate HTML for the PDF
     let html = `
       <!DOCTYPE html>
       <html lang="en">
@@ -1542,47 +1541,72 @@ app.get("/download-quiz-history", async (req, res) => {
         <title>Bioscope Quiz Report</title>
         <link rel="icon" href="assets/images/logo.png">
         <style>
-          body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-          .container { max-width: 800px; margin: auto; }
-          h1 { color: #333; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-          th { background-color: #f4a261; color: white; }
-          .logo { width: 150px; height: 150px; border-radius: 50%; margin: 20px auto; }
-          .download-btn { padding: 10px 20px; background: #f4a261; color: white; border: none; cursor: pointer; }
+          * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
+          body { background-color: #f8f9fa; text-align: center; padding: 20px; color: #333; }
+          .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 5px 15px rgba(0,0,0,0.2); }
+          h1 { color: #2c3e50; font-size: 26px; }
+          p { margin-bottom: 10px; }
+          .logo { width: 120px; height: 120px; border-radius: 50%; margin: 10px auto; display: block; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+          th { background-color: #ff6b6b; color: white; position: sticky; top: 0; }
+          tbody tr:nth-child(even) { background: #f1f1f1; }
+          .download-btn { padding: 12px 18px; background: #ff6b6b; color: white; border: none; cursor: pointer; margin-top: 15px; border-radius: 8px; font-size: 16px; }
+          .download-btn:hover { background: #e84118; }
+          
+          /* Mobile Responsive */
+          @media (max-width: 768px) {
+            .container { padding: 15px; }
+            table, th, td { font-size: 12px; }
+            .download-btn { font-size: 14px; padding: 10px 14px; }
+          }
+
+          /* Dark Mode */
+          @media (prefers-color-scheme: dark) {
+            body { background-color: #2c3e50; color: white; }
+            .container { background: #34495e; box-shadow: none; }
+            th { background-color: #e74c3c; }
+            tbody tr:nth-child(even) { background: #2c3e50; }
+            .download-btn { background: #e74c3c; }
+          }
         </style>
       </head>
       <body>
         <div class="container">
           <img src="assets/images/logo.png" class="logo" alt="Bioscope Logo">
           <h1>📜 Bioscope - Quiz History</h1>
-          <p>🌐 <a href="https://www.anatomy.com/" target="_blank">Visit Our Website</a></p>
-          <p>📧 User Email: ${email}</p>
+          <p>🌐 <a href="https://www.anatomy.com/" target="_blank" style="color: #ff6b6b; text-decoration: none;">Visit Our Website</a></p>
+          <p>📧 User Email: <strong>${email}</strong></p>
 
           <table>
-            <tr>
-              <th>📌 S.no</th>
-              <th>📝 Basic Quiz</th>
-              <th>🎯 Marks</th>
-              <th>🚀 Advanced</th>
-              <th>🌟 Marks</th>
-              <th>📅 Date</th>
-            </tr>`;
+            <thead>
+              <tr>
+                <th>📌 S.no</th>
+                <th>📝 Basic Quiz</th>
+                <th>🎯 Basic Marks</th>
+                <th>🚀 Advanced</th>
+                <th>🌟 Advance Marks</th>
+                <th>📅 Date</th>
+              </tr>
+            </thead>
+            <tbody>`;
 
     quizHistory.forEach((quiz, index) => {
       html += `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${quiz.BasicQuiz ? "✅ Attempt" : "🔒 Locked"}</td>
-          <td>${quiz.BasicQuizMarks}</td>
-          <td>${quiz.AdvanceQuiz ? "✅ Attempt" : "🔒 Locked"}</td>
-          <td>${quiz.AdvanceQuizMarks}</td>
-          <td>${quiz.date}</td>
-        </tr>`;
+              <tr>
+                <td>${index + 1}</td>
+                <td>${quiz.BasicQuiz ? "✅ Attempt" : "🔒 Locked"}</td>
+                <td>${quiz.BasicQuizMarks}</td>
+                <td>${quiz.AdvanceQuiz ? "✅ Attempt" : "🔒 Locked"}</td>
+                <td>${quiz.AdvanceQuizMarks}</td>
+                <td>${quiz.date}</td>
+              </tr>`;
     });
 
     html += `
+            </tbody>
           </table>
+
           <button class="download-btn" onclick="window.print()">📄 Download PDF</button>
         </div>
       </body>
@@ -1590,7 +1614,7 @@ app.get("/download-quiz-history", async (req, res) => {
 
     res.send(html);
   } catch (error) {
-    console.error("Error generating PDF:", error);
+    console.error("Error generating quiz history:", error);
     res.status(500).json({ message: "Internal server error", error: error.toString() });
   }
 });
