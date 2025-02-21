@@ -25,7 +25,6 @@ let loggedInUserEmail = null;
 app.use(cors());
 app.use(bodyParser.json());
 
-
 passport.use(
   new GoogleStrategy(
     {
@@ -368,7 +367,6 @@ app.get("/login-success", (req, res) => {
   `);
 });
 
-
 app.get("/auth/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
   const { token, profile } = req.user;
 
@@ -473,7 +471,6 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-
 app.post("/verify", async (req, res) => {
   const { otp } = req.body;
 
@@ -501,7 +498,6 @@ app.post("/verify", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 // Signup Route
 app.post("/signup", async (req, res) => {
@@ -550,7 +546,6 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: `Internal server error: ${error.message}` }); // Include error message
   }
 });
-
 
 // Send Quiz Completion Email Route
 app.post("/send-quiz-completion-email", async (req, res) => {
@@ -908,7 +903,7 @@ const quizSchema = new mongoose.Schema({
   AdvanceQuiz: { type: Boolean, default: null },
   BasicQuizMarks: { type: Number, default: null },
   AdvanceQuizMarks: { type: Number, default: null },
-  date: { type: Date, default: Date.now }, // New date field
+  date: { type: String, default: new Date().toISOString().split('T')[0] }, // Store only the date (YYYY-MM-DD)
 });
 
 const Quiz = mongoose.model("Quiz", quizSchema);
@@ -948,27 +943,33 @@ app.post("/save-basic-quiz", async (req, res) => {
   try {
     let quizEntries = await Quiz.find({ email });
 
-    if (quizEntries.length < 3) {
+    if (quizEntries.length < 30) {
       // Less than 3 entries: Add a new one
       const newQuizEntry = new Quiz({
         email,
         BasicQuiz: true,
         BasicQuizMarks: score,
-        date: new Date(), // Store current date
+        date: new Date().toISOString().split('T')[0], // Store only the date (YYYY-MM-DD)
       });
       await newQuizEntry.save();
       return res.status(200).json({ message: "New quiz entry added successfully!" });
-    } else if (quizEntries.length === 3) {
-      // Exactly 3 entries: Find the one with the lowest score and update it
+    } else if (quizEntries.length === 30) {
+      // Find the entry with the lowest score OR same score
       let lowestEntry = quizEntries.reduce((min, entry) =>
         entry.BasicQuizMarks < min.BasicQuizMarks ? entry : min
       );
 
       if (lowestEntry.BasicQuizMarks < score) {
+        // Update the lowest score
         lowestEntry.BasicQuizMarks = score;
-        lowestEntry.date = new Date(); // Update date on modification
+        lowestEntry.date = new Date().toISOString().split('T')[0]; // Update with only date
         await lowestEntry.save();
         return res.status(200).json({ message: "Lowest score updated successfully!" });
+      } else if (lowestEntry.BasicQuizMarks === score) {
+        // If the score is the same, update only the date
+        lowestEntry.date = new Date().toISOString().split('T')[0];
+        await lowestEntry.save();
+        return res.status(200).json({ message: "Date updated for the same score!" });
       } else {
         return res.status(400).json({ message: "Score is not higher than the lowest existing score. No update performed." });
       }
@@ -981,7 +982,6 @@ app.post("/save-basic-quiz", async (req, res) => {
     res.status(500).json({ message: "Error saving quiz data" });
   }
 });
-
 
 // API Endpoint to get user quiz scores
 // app.post('/fetchquizscores', async (req, res) => {
@@ -1413,27 +1413,33 @@ app.post("/save-advance-quiz", async (req, res) => {
   try {
     let quizEntries = await Quiz.find({ email });
 
-    if (quizEntries.length < 3) {
+    if (quizEntries.length < 30) {
       // Less than 3 entries: Add a new one
       const newQuizEntry = new Quiz({
         email,
         AdvanceQuiz: true,
         AdvanceQuizMarks: score,
-        date: new Date(), // Store current date
+        date: new Date().toISOString().split('T')[0], // Store only the date (YYYY-MM-DD)
       });
       await newQuizEntry.save();
       return res.status(200).json({ message: "New quiz entry added successfully!" });
-    } else if (quizEntries.length === 3) {
-      // Exactly 3 entries: Find the one with the lowest score and update it
+    } else if (quizEntries.length === 30) {
+      // Find the entry with the lowest score OR same score
       let lowestEntry = quizEntries.reduce((min, entry) =>
         entry.AdvanceQuizMarks < min.AdvanceQuizMarks ? entry : min
       );
 
       if (lowestEntry.AdvanceQuizMarks < score) {
+        // Update the lowest score
         lowestEntry.AdvanceQuizMarks = score;
-        lowestEntry.date = new Date(); // Update date on modification
+        lowestEntry.date = new Date().toISOString().split('T')[0]; // Update with only date
         await lowestEntry.save();
         return res.status(200).json({ message: "Lowest score updated successfully!" });
+      } else if (lowestEntry.AdvanceQuizMarks === score) {
+        // If the score is the same, update only the date
+        lowestEntry.date = new Date().toISOString().split('T')[0];
+        await lowestEntry.save();
+        return res.status(200).json({ message: "Date updated for the same score!" });
       } else {
         return res.status(400).json({ message: "Score is not higher than the lowest existing score. No update performed." });
       }
@@ -1448,6 +1454,35 @@ app.post("/save-advance-quiz", async (req, res) => {
 });
 
 // Add quiz-history API for fetching quiz history of user
+// app.get("/quiz-history", async (req, res) => {
+//   const { email } = req.query;
+
+//   try {
+//     const quizHistory = await Quiz.find({ email });
+
+//     if (!quizHistory || quizHistory.length === 0) {
+//       return res.json({ message: "No quiz history found for this user.", history: [] });
+//     }
+
+//     res.json({
+//       message: "Quiz history fetched successfully!",
+//       history: quizHistory.map((quiz, index) => ({
+//         attempt: index + 1,
+//         BasicQuiz: quiz.BasicQuiz || false,
+//         BasicQuizMarks: quiz.BasicQuizMarks ?? 0,
+//         AdvanceQuiz: quiz.AdvanceQuiz || false,
+//         AdvanceQuizMarks: quiz.AdvanceQuizMarks ?? "Not Atempt Yet",
+//         date: quiz.date || "Unknown",
+//       })),
+//     });
+//   } catch (error) {
+//     console.error("Error fetching quiz history:", error);
+//     res.status(500).json({ message: "Internal server error", error: error.toString() });
+//   }
+// });
+
+
+// Add quiz-history API for fetching quiz history of user
 app.get("/quiz-history", async (req, res) => {
   const { email } = req.query;
 
@@ -1458,16 +1493,26 @@ app.get("/quiz-history", async (req, res) => {
       return res.json({ message: "No quiz history found for this user.", history: [] });
     }
 
+    // Sort by highest total score (BasicQuizMarks + AdvanceQuizMarks) and latest date
+    const sortedHistory = quizHistory.sort((a, b) => {
+      const scoreA = (a.BasicQuizMarks ?? 0) + (a.AdvanceQuizMarks === "Not Atempt Yet" ? 0 : a.AdvanceQuizMarks);
+      const scoreB = (b.BasicQuizMarks ?? 0) + (b.AdvanceQuizMarks === "Not Atempt Yet" ? 0 : b.AdvanceQuizMarks);
+      return scoreB - scoreA || new Date(b.date) - new Date(a.date);
+    });
+
+    // Get top 3 quizzes
+    const topThreeQuizzes = sortedHistory.slice(0, 3).map((quiz, index) => ({
+      attempt: index + 1,
+      BasicQuiz: quiz.BasicQuiz || false,
+      BasicQuizMarks: quiz.BasicQuizMarks ?? 0,
+      AdvanceQuiz: quiz.AdvanceQuiz || false,
+      AdvanceQuizMarks: quiz.AdvanceQuizMarks ?? "Not Atempt Yet",
+      date: quiz.date || "Unknown",
+    }));
+
     res.json({
-      message: "Quiz history fetched successfully!",
-      history: quizHistory.map((quiz, index) => ({
-        attempt: index + 1,
-        BasicQuiz: quiz.BasicQuiz || false,
-        BasicQuizMarks: quiz.BasicQuizMarks ?? 0,
-        AdvanceQuiz: quiz.AdvanceQuiz || false,
-        AdvanceQuizMarks: quiz.AdvanceQuizMarks ?? "Not Atempt Yet",
-        date: quiz.date || "Unknown",
-      })),
+      message: "Top 3 quiz history fetched successfully!",
+      history: topThreeQuizzes,
     });
   } catch (error) {
     console.error("Error fetching quiz history:", error);
@@ -1477,6 +1522,78 @@ app.get("/quiz-history", async (req, res) => {
 
 
 
+app.get("/download-quiz-history", async (req, res) => {
+  const { email } = req.query;
+
+  try {
+    const quizHistory = await Quiz.find({ email });
+
+    if (!quizHistory || quizHistory.length === 0) {
+      return res.send("<h2>No quiz history found for this user.</h2>");
+    }
+
+    // Generate HTML for the PDF
+    let html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Bioscope Quiz Report</title>
+        <link rel="icon" href="assets/images/logo.png">
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+          .container { max-width: 800px; margin: auto; }
+          h1 { color: #333; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+          th { background-color: #f4a261; color: white; }
+          .logo { width: 150px; height: 150px; border-radius: 50%; margin: 20px auto; }
+          .download-btn { padding: 10px 20px; background: #f4a261; color: white; border: none; cursor: pointer; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <img src="assets/images/logo.png" class="logo" alt="Bioscope Logo">
+          <h1>📜 Bioscope - Quiz History</h1>
+          <p>🌐 <a href="https://www.anatomy.com/" target="_blank">Visit Our Website</a></p>
+          <p>📧 User Email: ${email}</p>
+
+          <table>
+            <tr>
+              <th>📌 S.no</th>
+              <th>📝 Basic Quiz</th>
+              <th>🎯 Marks</th>
+              <th>🚀 Advanced</th>
+              <th>🌟 Marks</th>
+              <th>📅 Date</th>
+            </tr>`;
+
+    quizHistory.forEach((quiz, index) => {
+      html += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${quiz.BasicQuiz ? "✅ Attempt" : "🔒 Locked"}</td>
+          <td>${quiz.BasicQuizMarks}</td>
+          <td>${quiz.AdvanceQuiz ? "✅ Attempt" : "🔒 Locked"}</td>
+          <td>${quiz.AdvanceQuizMarks}</td>
+          <td>${quiz.date}</td>
+        </tr>`;
+    });
+
+    html += `
+          </table>
+          <button class="download-btn" onclick="window.print()">📄 Download PDF</button>
+        </div>
+      </body>
+      </html>`;
+
+    res.send(html);
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    res.status(500).json({ message: "Internal server error", error: error.toString() });
+  }
+});
 
 
 // Start the server
